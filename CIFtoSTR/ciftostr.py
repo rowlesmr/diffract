@@ -2,7 +2,7 @@
 """
 Created on Mon Apr 19 17:10:25 2021
 
-@author: 184277J
+@author: Matthew Rowles
 """
 
 import CifFile as cf #https://pypi.org/project/PyCifRW/4.4/  https://bitbucket.org/jamesrhester/pycifrw/downloads/
@@ -254,13 +254,7 @@ def fixAtomSiteType(a):
     charge = regex.group(2)
     sign = regex.group(3)
     digit = regex.group(4) #if there is a trailing digit, then that is probably the charge
-    
-    print(symbol)
-    print(charge)
-    print(sign)
-    print(digit)
-    
-    
+        
     #check for a single sign with no charge. eg F-. Needs to return F-1
     if len(sign) == 1 and len(charge) == 0:
         if len(digit) == 0:
@@ -410,7 +404,7 @@ info_s = \
 "to ensure the data is consistent, but simply transcribes the data as given in the CIF.\n\n"+\
     \
 "Where similar or identical data could be given in several places, the values are taken in a\n"+\
-"specifc order of precedence, as detailed in the sections below. In general, if a value exists\n"+\
+"specific order of precedence, as detailed in the sections below. In general, if a value exists\n"+\
 "in an earlier place, the later places are not looked at.\n\n"+\
 \
 "This program uses the PyCifRW library, written by James Hester, to parse the CIF files in to\n"+\
