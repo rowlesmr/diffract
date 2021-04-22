@@ -9,9 +9,7 @@ import CifFile as cf #https://pypi.org/project/PyCifRW/4.4/  https://bitbucket.o
 import math
 import re #regular expression
 import sys #for command line arguments
-from glob import glob
-
-
+from glob import glob #for command line arguments
 
 
 def writeSTR(ciffile):
@@ -31,10 +29,8 @@ def writeSTR(ciffile):
     print("Done.")
 
 
-
 def createSTR(cif, data):
-    s = ""
-    s += "str\n"
+    s  = "str\n"
     s += getPhaseName(cif, data) + "\n"
     s += "\tscale @ 0.0001\n\tCS_L(,200)\n"
     s += getUnitCell(cif, data) + "\n"
@@ -42,7 +38,6 @@ def createSTR(cif, data):
     s += getAtoms(cif, data)
     
     return s
-
 
 
 def stripBrackets(l):
@@ -64,7 +59,7 @@ def stripBrackets(l):
                
         l[i]=s[0:bracket]
         
-    if changeMe: #if t was a list, change it back
+    if changeMe: #if it was a list, change it back
         l = l[0]
 
     return l
@@ -91,6 +86,14 @@ def changeQuestionMark(l):
     return l
 
 
+def concat(l, sep="_"):
+    r = ""
+    for s in l:
+        r += s + sep
+    r = r[0:len(r)-len(sep)] #get rid of final separator
+    return r
+
+ 
 
 #https://stackoverflow.com/a/67187811/36061
 #see https://stackoverflow.com/questions/67187672/how-to-deal-with-repeated-chunks-of-code-in-function-dealing-with-dictionaries
@@ -102,7 +105,6 @@ def getDictEntry(dct, *keys, default=None):
         except KeyError:
             pass
     return default
-
 
      
 def getPhaseName(cif, data):
@@ -148,7 +150,7 @@ def getUnitCell(cif, data):
     elif a == b and b != c: #tetragonal or hexagonal/trigonal
         if al == be and be == ga and al == float("90"): #tetragonal
             return concat(["\tTetragonal(",a_s,", ", c_s, ")"], sep="")
-        if al == be and al == float("90") and ga == float("120"): #hexagonal
+        if al == be and al == float("90") and ga == float("120"): #hexagonal (Trigonal resolves to Hexagonal in TOPAS)
             return concat(["\tHexagonal(",a_s,", ", c_s, ")"], sep="")
     
     elif a != b and a != c and b != c: #ortho, mono, tric
@@ -233,7 +235,7 @@ def isThisAnAtom(s):
 
 
 def fixAtomSiteType(a):
-    #In the sample CIFs I have, if n atom is given with a charge, then the number and sign
+    #In the sample CIFs I have, if an atom is given with a charge, then the number and sign
     #  are the wrong way around for TOPAS. This just switches the charge and sign around
     #  to make it compatible
     
@@ -246,17 +248,26 @@ def fixAtomSiteType(a):
     
     #assumes that the above strings are the only sort that can appear
 
-    regex = re.search("([A-Za-z]{1,2})(\d{0,2})([+-]{0,1})", a)
+    regex = re.search("([A-Za-z]{1,2})(\d{0,2})([+-]{0,1})(\d{0,2})", a)
     
     symbol = regex.group(1)
     charge = regex.group(2)
     sign = regex.group(3)
+    digit = regex.group(4) #if there is a trailing digit, then that is probably the charge
+    
+    print(symbol)
+    print(charge)
+    print(sign)
+    print(digit)
+    
     
     #check for a single sign with no charge. eg F-. Needs to return F-1
     if len(sign) == 1 and len(charge) == 0:
-        charge = "1"
-    
-    
+        if len(digit) == 0:
+            charge = "1"
+        else: #the atom was probably the right way around to begin with
+            return a
+        
     return symbol+sign+charge
         
         
@@ -264,12 +275,7 @@ def fixAtomSiteType(a):
 def getBeq(cif, data):
     
     try:
-        return getUaniso(cif, data)
-    except KeyError:
-        pass
-    
-    try:
-        return getBaniso(cif, data)
+        return getAniso(cif,data)
     except KeyError:
         pass
     
@@ -283,6 +289,7 @@ def getBeq(cif, data):
     except KeyError:
         pass
     
+    #if we get here, there were no B values in the CIF. Booo!
     return ["1"]*len(cif[data]["_atom_site_label"])
 
 
@@ -290,21 +297,60 @@ def getBiso(cif, data):
     return changeQuestionMark(stripBrackets(cif[data]["_atom_site_B_iso_or_equiv"]))
 
 
-
 def getUiso(cif, data):
     Uiso = changeQuestionMark(stripBrackets(cif[data]["_atom_site_U_iso_or_equiv"]))
     
     Uiso = [float(i) for i in Uiso] #https://stackoverflow.com/a/1614247/36061 convert string list to float list
-    Uiso = [i * 8 * math.pi**2 for i in Uiso] #convert to Biso
-    Uiso = [str(i) for i in Uiso]
-    Uiso = [i[0:i.index(".")+4] for i in Uiso] #truncate string at 3 d.p.
+    Biso = [i * 8 * math.pi**2 for i in Uiso] #convert to Biso
+    Biso = [str(i) for i in Biso]
+    Biso = [i[0:i.index(".")+4] for i in Biso] #truncate string at 3 d.p.
 
-    return Uiso #actually Biso now!
+    return Biso 
+
+
+def getAniso(cif,data):  
+    labelsAniso = cif[data]["_atom_site_aniso_label"]
+    labels      = cif[data]["_atom_site_label"]
+    
+    #if we get to here, then there should be some sort of anisotropic values
+    try:
+        Bequiv = getBaniso(cif,data) #if it isn't Baniso, 
+    except KeyError:
+        Bequiv = getUaniso(cif,data) #then it should be Uaniso
+    
+    
+    #do comparison with atom_labels to make sure
+    # every atom has a Bequiv
+    if labelsAniso == labels: #everything is there
+        return Bequiv
+    
+    #if we get to here, labelsAniso != labels, and we need to figure out what is good.
+    try:
+        Biso = getBiso(cif, data)
+    except KeyError:
+        try:
+            Biso = getUiso(cif, data)
+        except KeyError:
+            Biso = ["1"] * len(labels)
+    
+    #I now have the Biso values from the atom_label list
+    
+    #need to build a list of Biso values to return
+    r = ["1"] * len(labels)
+    for i in range(len(labels)):
+        atom_label = labels[i]
+        try:
+            aniso_index = labelsAniso.index(atom_label)
+            r[i] = Bequiv[aniso_index]
+        except ValueError:
+            r[i] = Biso[i]
+    
+    return r
+
 
 
 def getBaniso(cif,data):
-    labelsAniso = cif[data]["_atom_site_aniso_label"]
-    labels      = cif[data]["_atom_site_label"]
+    # Get anisotropic B values and return an average of the ellipsoid to make Biso
 
     #convert the str lists to float lists
     B11 = [float(i) for i in stripBrackets(cif[data]["_atom_site_aniso_B_11"])]
@@ -316,40 +362,14 @@ def getBaniso(cif,data):
     Bequiv = [str(i) for i in Bequiv]
     Bequiv = [i[0:i.index(".")+4] for i in Bequiv] #truncate string at 3 d.p.
 
-    #do comparison with atom_labels to make sure
-    # every atom has a Biso
-    if labelsAniso == labels: #everything is there
-        return Bequiv
-    
-    #if we get to here, labelsAniso != labels, and we need to figure out what is good.
-    try:
-        Biso = getBiso(cif, data)
-    except KeyError:
-        try:
-            Biso = getUiso(cif, data)
-        except KeyError:
-            Biso = ["1"] * len(labels)
-    
-    #I now have the Biso values from the atom_label list
-    
-    #need to build a list of Biso values to return
-    r = ["1"] * len(labels)
-    for i in range(len(labels)):
-        atom_label = labels[i]
-        try:
-            aniso_index = labelsAniso.index(atom_label)
-            r[i] = Bequiv[aniso_index]
-        except ValueError:
-            r[i] = Biso[i]
-    
-    return r
-
+    return Bequiv
 
 
 def getUaniso(cif,data):
-    labelsAniso = cif[data]["_atom_site_aniso_label"]
-    labels      = cif[data]["_atom_site_label"]
-
+    # Get anisotropic U values and return an average of the ellipsoid to make Uiso.
+    #  Then multiply by 8*Pi^2 to make Biso to work nicely with Topas
+    
+    
     #convert the str lists to float lists
     U11 = [float(i) for i in stripBrackets(cif[data]["_atom_site_aniso_U_11"])]
     U22 = [float(i) for i in stripBrackets(cif[data]["_atom_site_aniso_U_22"])]
@@ -360,57 +380,23 @@ def getUaniso(cif,data):
     Bequiv = [str(i) for i in Bequiv]
     Bequiv = [i[0:i.index(".")+4] for i in Bequiv] #truncate string at 3 d.p.
 
-    #do comparison with atom_labels to make sure
-    # every atom has a Biso
-    if labelsAniso == labels: #everything is there
-        return Bequiv
-    
-    #if we get to here, labelsAniso != labels, and we need to figure out what is good.
-    try:
-        Biso = getBiso(cif, data)
-    except KeyError:
-        try:
-            Biso = getUiso(cif, data)
-        except KeyError:
-            Biso = ["1"] * len(labels)
-    
-    #I now have the Biso values from the atom_label list
-    
-    #need to build a list of Biso values to return
-    r = ["1"] * len(labels)
-    for i in range(len(labels)):
-        atom_label = labels[i]
-        try:
-            aniso_index = labelsAniso.index(atom_label)
-            r[i] = Bequiv[aniso_index]
-        except ValueError:
-            r[i] = Biso[i]
-    
-    return r
+    return Bequiv
 
-
-
-def concat(l, sep="_"):
-    r = ""
-    for s in l:
-        r += s + sep
-    r = r[0:len(r)-len(sep)] #get rid of final separator
-    return r
-
-  
+ 
     
     
     
        
     
-help_s = "This program converts an arbitrary number of CIFs, each containing an arbitrary number of structures\n"+ \
+help_s = "\nThis program converts an arbitrary number of CIFs, each containing an arbitrary number of structures\n"+ \
        " into a number of individual STR files that are (supposed to be) compatible with TOPAS.\n\n"+ \
        ">python ciftostr.py *.cif\n or you can type the individual names of CIFs to use after the py file.\n\n" + \
-       "This program was written with https://pypi.org/project/PyCifRW/4.4/ . An earlier version may work.\n\n" + \
+       "This program requires PyCifRW. See https://bitbucket.org/jamesrhester/pycifrw/src/development/INSTALLATION\n\n" + \
+       "  for installation instructions.\n\n" + \
        "Matthew Rowles. matthew.rowles@curtin.edu.au 22 Apr 21"
     
     
-    
+#This is the actaul bit that does the work.    
 if len(sys.argv) <= 1: #there aren't any files to deal with
     print(help_s)
     sys.exit()
