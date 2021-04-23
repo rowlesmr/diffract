@@ -8,11 +8,11 @@ Created on Mon Apr 19 17:10:25 2021
 import CifFile as cf #https://pypi.org/project/PyCifRW/4.4/  https://bitbucket.org/jamesrhester/pycifrw/downloads/
 import math
 import re #regular expression
-import sys #for command line arguments
-from glob import glob #for command line arguments
+    
 
 
 def writeSTR(ciffile):
+    print("Reading " + ciffile)
     cif = cf.ReadCif(ciffile)
     datakeys = cif.keys()
     
@@ -20,9 +20,9 @@ def writeSTR(ciffile):
         s = createSTR(cif, data)
         f = getPhaseName(cif, data) + '.str'
         
-        print("Now writing " + f)
         
         str_file = open(f, "w")
+        print("Now writing " + str_file.name)
         str_file.write(s)
         str_file.close()
         
@@ -72,14 +72,15 @@ def stripBrackets(l):
     return l
 
    
-def changeQuestionMark(l):
+def changeNoValue(l):
     """
-    If a string consists of a single question mark ('?'), it is replaced with a zero ('0'). 
+    If a string consists of a single question mark ('?') or full stop ('.'), it is replaced with a zero ('0'). 
+    These are normally markers of "no value recorded"
     
     Args:
         l: A list of strings, or a single string.
     Returns:
-        A list of strings, or a single string, with zero in place of a single question mark
+        A list of strings, or a single string, with zero in place of a single question mark or full stop
      """
     
     changeMe = False
@@ -90,8 +91,8 @@ def changeQuestionMark(l):
     for i in range(len(l)):
         s = l[i]    
         
-        if s == "?":
-            l[i] = "0"
+        if s == "?" or s == ".":
+            l[i] = "0."
         
     if changeMe: #if t was a list, change it back
         l = l[0]
@@ -146,33 +147,37 @@ def valToFrac(l):
     fiveSixthFrac= "=5/6;"
     
     
-    
+    fractionDetected = False
     changeMe = False
     if isinstance(l, str): #if it's a single string, make it a list
         l = [l]
         changeMe = True
     
     for i in range(len(l)):
+        fractionDetected = False
         if l[i] in oneSixth:
+            fractionDetected = True
             l[i] = oneSixthFrac
         elif l[i] in oneThird:
+            fractionDetected = True
             l[i] = oneThirdFrac
         elif l[i] in twoThird:
+            fractionDetected = True
             l[i] = twoThirdFrac
         elif l[i] in fiveSixth:
+            fractionDetected = True
             l[i] = fiveSixthFrac
         else:
             pass #l[i] is all good
+            
+            
+        if fractionDetected:
+            print("Fractional atomic coordinate detected and replaced.")
         
     if changeMe: #if it was a list, change it back
         l = l[0]
 
     return l
-                
-
-
-
-
 
 
 def getDictEntry(dct, *keys, default=None):
@@ -434,7 +439,9 @@ def isThisAnAtom(s):
                 "Pr","Pm","Pt","Ra","Rb","Re","Rh","Rn","Ru", "S",\
                 "Sb","Sc","Sm","Se","Si","Sn","Sr","Ta","Tb","Tc",\
                 "Te","Th","Tl","Ti","Tm", "W", "U", "V","Xe", "Y",\
-                "Yb","Zn","Zr")
+                "Yb","Zn","Zr","Np","Pu","Am","Cm","Bk","Cf", "D")
+        
+        
     
     r = s[0:2] #take the first two characters
     if r in elements:
@@ -460,6 +467,10 @@ def fixAtomSiteType(a):
      V3+ -->  V+3
     Fe2+ --> Fe+2
      O1- -->  O-1
+     
+    Furthermore, the charge is checked against the list of scattering factors supported
+    by TOPAS, and if a mismatch is detected, a charged atom is replaced by the neutral one.
+    eg: H+1 --> H
     
     Args:
         s: a string to denoting the atom type, with or without a charge
@@ -475,6 +486,15 @@ def fixAtomSiteType(a):
     sign = regex.group(3)
     digit = regex.group(4) #if there is a trailing digit, then that is probably the charge
         
+    
+    if symbol == "W":
+        print("W detected. Do you mean tungsten or oxygen from a water molecule?")
+    
+    
+    if charge == "0": #ie Si0+ is a valid symbol, but it is a neutral atom
+        charge = ""
+        sign = ""
+    
     #check for a single sign with no charge. eg F-. Needs to return F-1
     if len(sign) == 1 and len(charge) == 0:
         if len(digit) == 0:
@@ -482,9 +502,60 @@ def fixAtomSiteType(a):
         else: #the atom was probably the right way around to begin with
             return a
         
-    return symbol+sign+charge
+    return allowedAtomTypes(symbol+sign+charge)
         
+
+
+def allowedAtomTypes(a):
+    """
+    Given an atom type in the correct TOPAS site format, the CIF dictionary can allow charges
+    for which there are no scattering factors..
+    
+    The charge is checked against the list of scattering factors supported by TOPAS, and if 
+    a mismatch is detected, a charged atom is replaced by the neutral one.
+    eg: H+1 --> H
+    
+    Args:
+        s: a string to denoting the atom type, with or without a charge
         
+    Returns:
+        A string containing the atom type with the charge in the correct order, if one is given.
+    """
+    allowed = ("D", "H", "H-1", "D-1", "He", "Li", "Li+1", "Be", "Be+2", "B", "C", "N", 
+               "O", "O-1", "O-2", "F", "F-1", "Ne", "Na", "Na+1", "Mg", "Mg+2", "Al", 
+               "Al+3", "Si", "Si+4", "P", "S", "Cl", "Cl-1", "Ar", "K", "K+1", "Ca", 
+               "Ca+2", "Sc", "Sc+3", "Ti", "Ti+2", "Ti+3", "Ti+4", "V", "V+2", "V+3", 
+               "V+5", "Cr", "Cr+2", "Cr+3", "Mn", "Mn+2", "Mn+3", "Mn+4", "Fe", "Fe+2", 
+               "Fe+3", "Co", "Co+2", "Co+3", "Ni", "Ni+2", "Ni+3", "Cu", "Cu+1", "Cu+2", 
+               "Zn", "Zn+2", "Ga", "Ga+3", "Ge", "Ge+4", "As", "Se", "Br", "Br-1", "Kr", 
+               "Rb", "Rb+1", "Sr", "Sr+2", "Y", "Y+3", "Zr", "Zr+4", "Nb", "Nb+3", "Nb+5", 
+               "Mo", "Mo+3", "Mo+5", "Mo+6", "Tc", "Ru", "Ru+3", "Ru+4", "Rh", "Rh+3", 
+               "Rh+4", "Pd", "Pd+2", "Pd+4", "Ag", "Ag+1", "Ag+2", "Cd", "Cd+2", "In", 
+               "In+3", "Sn", "Sn+2", "Sn+4", "Sb", "Sb+3", "Sb+5", "Te", "I", "I-1", "Xe", 
+               "Cs", "Cs+1", "Ba", "Ba+2", "La", "La+3", "Ce", "Ce+3", "Ce+4", "Pr", "Pr+3", 
+               "Pr+4", "Nd", "Nd+3", "Pm", "Pm+3", "Sm", "Sm+3", "Eu", "Eu+2", "Eu+3", "Gd", 
+               "Gd+3", "Tb", "Tb+3", "Dy", "Dy+3", "Ho", "Ho+3", "Er", "Er+3", "Tm", "Tm+3", 
+               "Yb", "Yb+2", "Yb+3", "Lu", "Lu+3", "Hf", "Hf+4", "Ta", "Ta+5", "W", "W+6", 
+               "Re", "Os", "Os+4", "Ir", "Ir+3", "Ir+4", "Pt", "Pt+2", "Pt+4", "Au", "Au+1", 
+               "Au+3", "Hg", "Hg+1", "Hg+2", "Tl", "Tl+1", "Tl+3", "Pb", "Pb+2", "Pb+4", 
+               "Bi", "Bi+3", "Bi+5", "Po", "At", "Rn", "Fr", "Ra", "Ra+2", "Ac", "Ac+3", 
+               "Th", "Th+4", "Pa", "U", "U+3", "U+4", "U+6", "Np", "Np+3", "Np+4", "Np+6", 
+               "Pu", "Pu+3", "Pu+4", "Pu+6", "Am", "Cm", "Bk", "Cf")
+    
+    if a in allowed:
+        return a
+    
+     
+    #if we get here, the atom doesn't exist in the tuple.
+    regex = re.search("([A-Za-z]{1,2})([+-]{0,1})(\d{0,2})", a) #Cu+2
+    symbol = regex.group(1)
+    
+    print(a + " is not a legal TOPAS scattering factor. Atom replaced with " + symbol) 
+    
+    return symbol
+
+
+
     
 def getBeq(cif, data):
     """
@@ -504,26 +575,42 @@ def getBeq(cif, data):
         A list containing the isotropic atomic displacement parameters, B, of
     all atomic sites.
     """
-    
+    goToEnd = False
+    r = []
     try:
-        return getAniso(cif,data)
+        r = getAniso(cif,data)
+        goToEnd = True
     except KeyError:
         pass
     
-    try:
-        return getUiso(cif, data)
-    except KeyError:
-        pass
+    if not goToEnd:
+        try:
+            r = getUiso(cif, data)
+            goToEnd = True
+        except KeyError:
+            pass
        
-    try:
-        return getBiso(cif,data)
-    except KeyError:
-        pass
+    if not goToEnd:
+        try:
+            r = getBiso(cif,data)
+            goToEnd = True
+        except KeyError:
+            pass
     
     #if we get here, there were no B values in the CIF. Booo!
-    return ["1"]*len(cif[data]["_atom_site_label"])
-
-
+    if not goToEnd:
+        print("No atomic displacement parameters found. Defaulting to a value of 1.")
+        r = ["1."]*len(cif[data]["_atom_site_label"])
+        
+        
+    #do the final check for negative values    
+    for s in r:
+        if s.startswith("-"):
+            print("Warning! Negative atomic displacement parameter detected!")
+            
+    return r
+   
+    
 def getBiso(cif, data):
     """
     Returns a list of strings giving the isotropic atomic displacement parameters, B, of
@@ -539,7 +626,7 @@ def getBiso(cif, data):
     Raises:
         KeyError: if the key "_atom_site_B_iso_or_equiv" is not present.
     """
-    return changeQuestionMark(stripBrackets(cif[data]["_atom_site_B_iso_or_equiv"]))
+    return changeNoValue(stripBrackets(cif[data]["_atom_site_B_iso_or_equiv"]))
 
 
 def getUiso(cif, data):
@@ -558,12 +645,17 @@ def getUiso(cif, data):
     Raises:
         KeyError: if the key "_atom_site_U_iso_or_equiv" is not present.
     """
-    Uiso = changeQuestionMark(stripBrackets(cif[data]["_atom_site_U_iso_or_equiv"]))
+    Uiso = changeNoValue(stripBrackets(cif[data]["_atom_site_U_iso_or_equiv"]))
     
     Uiso = [float(i) for i in Uiso] #https://stackoverflow.com/a/1614247/36061 convert string list to float list
     Biso = [i * 8 * math.pi**2 for i in Uiso] #convert to Biso
     Biso = [str(i) for i in Biso]
     Biso = [i[0:i.index(".")+4] for i in Biso] #truncate string at 3 d.p.
+    
+    #fx the no given B value
+    for i in range(len(Biso)):
+        if Biso[i] == "0.0": #ie there is no value
+            Biso[i] = "1."
 
     return Biso 
 
@@ -611,12 +703,12 @@ def getAniso(cif,data):
         try:
             Biso = getUiso(cif, data)
         except KeyError:
-            Biso = ["1"] * len(labels)
+            Biso = ["1."] * len(labels)
     
     #I now have the Biso values from the atom_label list
     
     #need to build a list of Biso values to return
-    r = ["1"] * len(labels)
+    r = ["1."] * len(labels)
     for i in range(len(labels)):
         atom_label = labels[i]
         try:
@@ -624,6 +716,10 @@ def getAniso(cif,data):
             r[i] = Bequiv[aniso_index]
         except ValueError:
             r[i] = Biso[i]
+    
+    
+    if "1." in r:
+        print("At least one atom has no atomic displacement parameter. A default value of 1 has been entered.")
     
     return r
 
@@ -688,155 +784,13 @@ def getUaniso(cif,data):
 
  
     
-    
-    
-       
-    
-help_s = \
-"\nThis program converts an arbitrary number of CIFs, each containing an arbitrary number of \n"+\
-"structures into a number of individual STR files that are (supposed to be) compatible with TOPAS.\n\n"+ \
-\
-">python ciftostr.py *.cif\n or you can type the individual names of CIFs to use after the py file.\n\n" + \
-\
-"If you would like some information on what the program does: >python ciftostr.py -info\n\n"+\
-\
-"This program requires PyCifRW. For instructions on how to install it, please see \n"+\
- "https://bitbucket.org/jamesrhester/pycifrw/src/development/INSTALLATION\n\n" + \
-\
-"Matthew Rowles. matthew.rowles@curtin.edu.au 22 Apr 21"
-    
- 
-
-
-info_s = \
-"This program is designed to reformat data from a CIF format into the STR format suitable\n"+\
-"for use by the Rietveld analysis software, TOPAS. It doesn't carry out any validation checks\n"+\
-"to ensure the data is consistent, but simply transcribes the data as given in the CIF.\n\n"+\
-    \
-"Where similar or identical data could be given in several places, the values are taken in a\n"+\
-"specific order of precedence, as detailed in the sections below. In general, if a value exists\n"+\
-"in an earlier place, the later places are not looked at.\n\n"+\
-\
-"This program uses the PyCifRW library, written by James Hester, to parse the CIF files in to\n"+\
-"a format easily used to remix the underlying data.\n\n"+\
-    \
-"The STR's phase_name is taken from '_chemical_name_mineral', '_chemical_name_common',\n"+\
-"'_chemical_name_systematic', or '_chemical_name_structure_type', in that order, appended with\n"+\
-"the value of the 'data' block. If none of these keys are available, then the name of the 'data_'\n"+\
-"block is used. This is also used as the filename of the STR file.\n\n"+\
-    \
-"The unit cell parameters are taken from '_cell_length_a', '_cell_length_b', '_cell_length_c', \n"+\
-"'_cell_angle_alpha', '_cell_angle_beta', and '_cell_angle_gamma'. Some comparisons are made to\n"+\
-"enable some standard macros to be used (eg Cubic, Tetragonal...). In any of these fail, then all\n"+\
-"parameters are given as a fail safe.\n\n"+\
-\
-"The space_group is taken from '_symmetry_space_group_name_H-M', '_symmetry_Int_Tables_number', \n"+\
-"'_space_group_name_H-M_alt', or '_space_group_IT_number', in that order. If none of these keys\n"+\
-"are available, then an empty string is written as the space group. The value of the space group is \n"+\
-"as exactly given in the CIF. No validation or editing is done.\n\n"+\
-\
-"The atomic sites are constructed as follows: The atom labels are taken from '_atom_site_label', \n"+\
-"with the fractional x, y, and z coordinates given by '_atom_site_fract_x', '_y', and '_z'. \n"+\
-"If the decimal values of the fractional coordinates are consistent with the fractions 1/6, 1/3, 2/3,\n"+\
-"or 5/6, then the decimal value is replaced by the fractional representation.\n"+\
-"The site occupancy is given by '_atom_site_occupancy', or by '1', if that key is not given.\n"+\
-"The atom type is given by '_atom_site_type_symbol', where available, or by the first one or two\n"+\
-"characters of the site label. If these characters match an element symbol, then that is used, \n"+\
-"otherwise, the label is used in it's entirety, and the user must decide the correct atom type to use.\n"+\
-"An attempt is also made to reorder the charge given on an atom, to ensure it is compatible with\n"+\
-"TOPAS ordering, ie Fe+2, not Fe2+.\n\n"+\
-\
-"Isotropic Atomic Displacement Parameters (ADPs; Biso), are taken from '_atom_site_B_iso_or_equiv', or\n"+\
-"from '_atom_site_U_iso_or_equiv', where they are then multiplied by 8*Pi^2 to give B values.\n"+\
-"If anisotropic ADPs are given, then '_atom_site_aniso_B_11', '_atom_site_aniso_B_22', and\n"+\
-"'_atom_site_aniso_B_33' are averaged to give an equivalent Biso value. Alternatively, the equivalent\n"+\
-"U values are used to calculate Biso. As anisotropic values could be given for a subset of the atoms\n"+\
-"in the structure, the labels given by '_atom_site_label' and '_atom_site_aniso_label' are matched, \n"+\
-"and if an atom doesn't have an anisotropic value, it takes its isotropic value, or is assigned a\n"+\
-"value of '1'.\n\n"+\
-\
-"The atomic site is also given a 'num_posns 0' entry, which will update with the multiplicity of the\n"+\
-"site following a refinement. This will allow the user to compare this value with the CIF or Vol A\n"+\
-"to help ensure that the correct symmetry is being applied.\n\n"+\
-\
-"Finally, the STR is given a Lorentzian crystallite size of 200 nm, and a refinable scale factor\n"+\
-"of 0.0001 to allow for an easy start to a refinement. All values given in the STR are fixed,\n"+\
-"and require active intervention to refine, constrain, or restrain them.\n\n"+\
-\
-"If you have any feedback, please contact me. If you find any bugs, please provide the CIF which \n"+\
-"caused the error, a description of the error, and a description of how you believe the program\n"+\
-"should work in that instance.\n\n"+\
-\
-"Thanks, Matthew Rowles.\n"+\
-"matthew.rowles@curtin.edu.au\n"+\
-"22 Apr 21"    
-
-    
-#This is the actaul bit that does the work.    
-
-
-
-if len(sys.argv) <= 1: #there aren't any files to deal with
-    print(help_s)
-    sys.exit()
- 
-    
-if "-info" in sys.argv:
-    print(info_s)
-    sys.exit()
- 
-    
-filenames = []
-for i in range(1,len(sys.argv)):
-    filenames += glob(sys.argv[i])
-
-
-
-for file in filenames:
-    
-    try:
-        writeSTR(file)
-
-    except Exception as e: #just print the exception and keep going
-
-       # print traceback.format_exc()
-        print(e)
-
-
-
-
-
-#cif = cf.ReadCif('jun_01_2.cif')
-
-
-
-
-#see the end of the file for the actual bits that do the work
-
-
-#for arg in glob(sys.argv):
-#    print(arg)
-
-
 
 #cif = cf.ReadCif("albite_9002196.cif") #U_aniso 
 #cif = cf.ReadCif("9326-ICSD_3.cif")     #B_iso
 #cif = cf.ReadCif("albite_9009663.cif")  #U_iso
-#cif = cf.ReadCif("example.cif")  #U_iso & U_aniso - not all atoms have aniso
+cif = cf.ReadCif("example.cif")  #U_iso & U_aniso - not all atoms have aniso
 #cif = cf.ReadCif("Labradorits_1008757.cif") #B_aniso
-cif = cf.ReadCif("quartz_1011172.cif") # z = 1/3
+#cif = cf.ReadCif("quartz_1011172.cif") # z = 1/3
 #cif = cf.ReadCif("muscovite_9000837.cif")
 data = cif.keys()[0]
-
-#text_file = open("test with space.str", "w")
-#text_file.write(makeSTR(cif, data))
-#text_file.close()
-
-
-#   phase name
-#   a b c
-#   al be ga
-#   space group
-#   site x y z occ B 
-
 
