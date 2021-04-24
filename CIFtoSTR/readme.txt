@@ -1,6 +1,6 @@
 You want to use ciftostr.pyz or ciftostr.exe, depending on your preference.
 
-PyCifRW and PySimpleGUI are required if you're using the plain python version.
+THe PyCifRW and PySimpleGUI dependencies are included in the pyz file.
 
 If the program is run with zero command line arguments, then a GUI is launched, otherwise it is
 command-line driven.
