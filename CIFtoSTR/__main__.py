@@ -7,24 +7,26 @@ Created on Fri Apr 23 10:57:06 2021
 
 
 import ciftostr
+import PySimpleGUI as sg #for gui
 import sys #for command line arguments
 from glob import glob #for command line arguments
     
-  
-    
-    
+
 help_s = \
 "\nThis program converts an arbitrary number of CIFs, each containing an arbitrary number of \n"+\
-"structures into a number of individual STR files that are (supposed to be) compatible with TOPAS.\n\n"+ \
+"structures, into a number of individual STR files that are (supposed to be) compatible with TOPAS.\n\n"+ \
 \
+"Choose the files you want to convert using the 'Browse' button, then click 'Convert' to convert them.\n]n"+\
+\
+"If you would like to run it in the command line, you need to provide some command line arguments:\n"+\
 ">python ciftostr.py *.cif\n or you can type the individual names of CIFs to use after the py file.\n\n" + \
 \
-"If you would like some information on what the program does: >python ciftostr.py -info\n\n"+\
+"If you would like some information on what the program does, click 'Info', or run >python ciftostr.py -info\n\n"+\
 \
 "This program requires PyCifRW. For instructions on how to install it, please see \n"+\
  "https://bitbucket.org/jamesrhester/pycifrw/src/development/INSTALLATION\n\n" + \
 \
-"Matthew Rowles. matthew.rowles@curtin.edu.au 22 Apr 21"
+"Matthew Rowles. matthew.rowles@curtin.edu.au 22 Apr 21\n------------------------\n"
     
  
 
@@ -39,7 +41,8 @@ info_s = \
 "in an earlier place, the later places are not looked at.\n\n"+\
 \
 "This program uses the PyCifRW library, written by James Hester, to parse the CIF files in to\n"+\
-"a format easily used to remix the underlying data.\n\n"+\
+"a format easily used to remix the underlying data. For instructions on how to install it, please\n"+\
+"see https://bitbucket.org/jamesrhester/pycifrw/src/development/INSTALLATION\n\n" + \
     \
 "The STR's phase_name is taken from '_chemical_name_mineral', '_chemical_name_common',\n"+\
 "'_chemical_name_systematic', or '_chemical_name_structure_type', in that order, appended with\n"+\
@@ -92,11 +95,51 @@ info_s = \
 "matthew.rowles@curtin.edu.au\n"+\
 "22 Apr 21"    
 
-import time
 
 
-if len(sys.argv) <= 1: #Assume the user needs some help
+def gui():
+    #https://stackoverflow.com/questions/55573754/load-multiple-file-with-pysimplegui
+    #https://github.com/PySimpleGUI/PySimpleGUI/blob/master/DemoPrograms/Demo_Script_Launcher_Realtime_Output.py
+    layout = [
+              [sg.Output(size=(90,20), background_color='black', text_color='white')],
+              [sg.Input(key='_FILES_'), sg.FilesBrowse(file_types=(("CIFs", "*.cif"),("All files", "*.*"),))], 
+              [sg.Button('Convert'), sg.Button('Exit'), sg.Button('Info')]
+             ]
+    
+    window = sg.Window("CIFtoSTR", layout, finalize=True)
+
+    #initial help text every time you open the program.
     print(help_s)
+    
+    while True:             # Event Loop
+        event, values = window.read() #window.read() is a tuple
+        filenames = values['_FILES_'].split(';') # list of filenames
+        if event in (sg.WIN_CLOSED, 'Exit'):
+            break
+        elif event == 'Convert':
+            for file in filenames:
+                try:
+                    ciftostr.writeSTR(file)
+                    print("--------------------")
+                except Exception as e: #just print the exception and keep going
+                    print(e)
+            print("All done")
+            
+        elif event == 'Info':
+            print(info_s)
+            #runCommand(cmd=values['-IN-'], window=window)
+    window.close()
+
+
+
+
+
+
+if len(sys.argv) <= 1: #Assume the user wants the gui
+    
+    print(help_s) #just in case there are commandline people wanting to know.
+    gui()
+    
     sys.exit()
  
     
@@ -115,7 +158,10 @@ for file in filenames:
         ciftostr.writeSTR(file)
     except Exception as e: #just print the exception and keep going
         print(e)
+print("All done")
 
 
-#time.sleep(10)
 print("Thanks for using me.")
+
+
+

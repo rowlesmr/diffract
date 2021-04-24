@@ -788,9 +788,9 @@ def getUaniso(cif,data):
 #cif = cf.ReadCif("albite_9002196.cif") #U_aniso 
 #cif = cf.ReadCif("9326-ICSD_3.cif")     #B_iso
 #cif = cf.ReadCif("albite_9009663.cif")  #U_iso
-cif = cf.ReadCif("example.cif")  #U_iso & U_aniso - not all atoms have aniso
+#cif = cf.ReadCif("example.cif")  #U_iso & U_aniso - not all atoms have aniso
 #cif = cf.ReadCif("Labradorits_1008757.cif") #B_aniso
 #cif = cf.ReadCif("quartz_1011172.cif") # z = 1/3
 #cif = cf.ReadCif("muscovite_9000837.cif")
-data = cif.keys()[0]
+#data = cif.keys()[0]
 
