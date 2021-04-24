@@ -12,7 +12,7 @@ import re #regular expression
 
 
 def writeSTR(ciffile):
-    print("Reading " + ciffile)
+    print("Reading " + ciffile + ".")
     cif = cf.ReadCif(ciffile)
     datakeys = cif.keys()
     
@@ -22,7 +22,7 @@ def writeSTR(ciffile):
         
         
         str_file = open(f, "w")
-        print("Now writing " + str_file.name)
+        print("Now writing " + str_file.name + ".")
         str_file.write(s)
         str_file.close()
         
@@ -376,6 +376,7 @@ def getAtoms(cif, data):
         atoms = [fixAtomSiteType(i) for i in atoms]
         
     except KeyError:
+        print("Warning! Atom types inferred from site labels. Please check for correctness.")
         atoms = []
         for l in labels:
             atoms += [isThisAnAtom(l)]
@@ -550,7 +551,7 @@ def allowedAtomTypes(a):
     regex = re.search("([A-Za-z]{1,2})([+-]{0,1})(\d{0,2})", a) #Cu+2
     symbol = regex.group(1)
     
-    print(a + " is not a legal TOPAS scattering factor. Atom replaced with " + symbol) 
+    print(a + " is not a legal TOPAS scattering factor. Atom replaced with " + symbol + ".") 
     
     return symbol
 
