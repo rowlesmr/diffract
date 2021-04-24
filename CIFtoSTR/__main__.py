@@ -19,14 +19,11 @@ help_s = \
 "Choose the files you want to convert using the 'Browse' button, then click 'Convert' to convert them.\n]n"+\
 \
 "If you would like to run it in the command line, you need to provide some command line arguments:\n"+\
-">python ciftostr.py *.cif\n or you can type the individual names of CIFs to use after the py file.\n\n" + \
+">python ciftostr.pyz *.cif\n or you can type the individual names of CIFs to use after the pyz file.\n\n" + \
 \
-"If you would like some information on what the program does, click 'Info', or run >python ciftostr.py -info\n\n"+\
+"For information on exactly what the program does, click 'Info', or run >python ciftostr.pyz -info\n\n"+\
 \
-"This program requires PyCifRW. For instructions on how to install it, please see \n"+\
- "https://bitbucket.org/jamesrhester/pycifrw/src/development/INSTALLATION\n\n" + \
-\
-"Matthew Rowles. matthew.rowles@curtin.edu.au 22 Apr 21\n------------------------\n"
+"Matthew Rowles. \nmatthew.rowles@curtin.edu.au \n22 Apr 21\n------------------------\n"
     
  
 
@@ -40,9 +37,9 @@ info_s = \
 "specific order of precedence, as detailed in the sections below. In general, if a value exists\n"+\
 "in an earlier place, the later places are not looked at.\n\n"+\
 \
-"This program uses the PyCifRW library, written by James Hester, to parse the CIF files in to\n"+\
-"a format easily used to remix the underlying data. For instructions on how to install it, please\n"+\
-"see https://bitbucket.org/jamesrhester/pycifrw/src/development/INSTALLATION\n\n" + \
+"This program uses the PyCifRW library, written by James Hester, to parse the CIF files into\n"+\
+"a format easily used to remix the underlying data. For the source code and other information,\n"+\
+"see https://bitbucket.org/jamesrhester/pycifrw/src/development\n\n" + \
     \
 "The STR's phase_name is taken from '_chemical_name_mineral', '_chemical_name_common',\n"+\
 "'_chemical_name_systematic', or '_chemical_name_structure_type', in that order, appended with\n"+\
@@ -83,9 +80,9 @@ info_s = \
 "site following a refinement. This will allow the user to compare this value with the CIF or Vol A\n"+\
 "to help ensure that the correct symmetry is being applied.\n\n"+\
 \
-"Finally, the STR is given a Lorentzian crystallite size of 200 nm, and a refinable scale factor\n"+\
-"of 0.0001 to allow for an easy start to a refinement. All values given in the STR are fixed,\n"+\
-"and require active intervention to refine, constrain, or restrain them.\n\n"+\
+"Finally, the STR is given a fixed Lorentzian crystallite size of 200 nm, and a refinable scale factor\n"+\
+"of 0.0001 to allow for an easy start to a refinement. All other values given in the STR are fixed,\n"+\
+"and require active intervention to name, refine, constrain, or restrain them.\n\n"+\
 \
 "If you have any feedback, please contact me. If you find any bugs, please provide the CIF which \n"+\
 "caused the error, a description of the error, and a description of how you believe the program\n"+\
@@ -93,7 +90,7 @@ info_s = \
 \
 "Thanks, Matthew Rowles.\n"+\
 "matthew.rowles@curtin.edu.au\n"+\
-"22 Apr 21"    
+"24 Apr 21"    
 
 
 
