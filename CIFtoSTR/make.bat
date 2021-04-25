@@ -7,25 +7,32 @@ set src=%~dp0
 REM Set up the current working directory files
 del %filename%.pyz
 
-REM create the archive
-cd ..
-python -m zipapp %filename% --compress
-copy %filename%.pyz %filename%\
-cd %filename%
+
+REM Make the python archive - zip lets you exclude locations
+zip %filename%.pyz *.* -r -x make.bat testcifs* __pycache__* build* cache* %filename%.exe
+
+
+REM REM create the archive
+REM cd ..
+REM python -m zipapp %filename% --compress
+REM copy %filename%.pyz %filename%\
+REM cd %filename%
 
 
 REM make the exe file and clean up
 pyinstaller  --onefile __main__.py --name %filename%
 del %dest%%filename%.exe
 del %git%%filename%.exe
+del %filename%.exe
 cd dist
 copy %filename%.exe %git%
 copy %filename%.exe %dest%
+copy %filename%.exe ..
 cd ..
 rmdir /Q /S build
 rmdir /Q /S dist
 rmdir /Q /S __pycache__
-del ciftostr.spec
+del %filename%.spec
 
 
 
@@ -44,6 +51,8 @@ copy __main__.py %git%
 
 del %git%%filename%.pyz
 copy %filename%.pyz %git%
+
+
 
 del %git%make.bat
 copy make.bat %git%
