@@ -120,13 +120,8 @@ def gui():
         if event in (sg.WIN_CLOSED, 'Exit'):
             break
         elif event == 'Convert':
-            for file in filenames:
-                try:
-                    ciftostr.writeSTR(file)
-                    print("--------------------")
-                except Exception as e: #just print the exception and keep going
-                    print(e)
-            print("All done")
+            #this does the actual CIF to STR conversion
+            convertCifs(filenames)
             
         elif event == 'Info':
             print(info_s)
@@ -155,13 +150,31 @@ def main():
         filenames += glob(sys.argv[i])
     
     
+    #this does the actual CIF to STR conversion
+    convertCifs(filenames)
+    
+
+
+
+def convertCifs(filenames):
+    """
+    Helper function to keep the creation of STRs consistent between the commandline and GUI versions
+
+    Args:
+        filenames: a list of filenames as strings
+    Returns:
+        None
+    """
     for file in filenames:
         try:
             ciftostr.writeSTR(file)
+            print("--------------------")
         except Exception as e: #just print the exception and keep going
             print(e)
+    print("All done.")
     
-    print("All done")
+
+
 
 
 
