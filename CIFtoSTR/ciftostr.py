@@ -8,7 +8,7 @@ Created on Mon Apr 19 17:10:25 2021
 import CifFile as cf #https://pypi.org/project/PyCifRW/4.4/  https://bitbucket.org/jamesrhester/pycifrw/downloads/
 import math
 import re #regular expression
-    
+import os #ntpath #to separate path and filename
 
 
 def writeSTR(ciffile):
@@ -16,10 +16,11 @@ def writeSTR(ciffile):
     cif = cf.ReadCif(ciffile)
     datakeys = cif.keys()
     
+    path = os.path.dirname(ciffile)
+
     for data in datakeys:
         s = createSTR(cif, data)
-        f = getPhaseName(cif, data) + '.str'
-        
+        f = os.path.join(path, getPhaseName(cif, data) + '.str')
         
         str_file = open(f, "w")
         print("Now writing " + str_file.name + ".")

@@ -10,6 +10,7 @@ import ciftostr
 import PySimpleGUI as sg #for gui
 import sys #for command line arguments
 from glob import glob #for command line arguments
+
     
 
 help_s = \
@@ -98,7 +99,12 @@ def gui():
     #https://stackoverflow.com/questions/55573754/load-multiple-file-with-pysimplegui
     #https://github.com/PySimpleGUI/PySimpleGUI/blob/master/DemoPrograms/Demo_Script_Launcher_Realtime_Output.py
     layout = [
-              [sg.Output(size=(90,20), background_color='black', text_color='white')],
+              [sg.Multiline(size=(90,20), 
+                            background_color='black', 
+                            text_color='white', 
+                            reroute_stdout=True, 
+                            reroute_stderr=True,
+                            autoscroll = True)],
               [sg.Input(key='_FILES_'), sg.FilesBrowse(file_types=(("CIFs", "*.cif"),("All files", "*.*"),))], 
               [sg.Button('Convert'), sg.Button('Exit'), sg.Button('Info')]
              ]
@@ -130,35 +136,38 @@ def gui():
 
 
 
-
-
-if len(sys.argv) <= 1: #Assume the user wants the gui
+def main():
+    if len(sys.argv) <= 1: #Assume the user wants the gui
+        
+        print(help_s) #just in case there are commandline people wanting to know.
+        gui()
+        
+        sys.exit()
+     
+        
+    if "-info" in sys.argv:
+        print(info_s)
+        sys.exit()
+     
+        
+    filenames = []
+    for i in range(1,len(sys.argv)):
+        filenames += glob(sys.argv[i])
     
-    print(help_s) #just in case there are commandline people wanting to know.
-    gui()
     
-    sys.exit()
- 
+    for file in filenames:
+        try:
+            ciftostr.writeSTR(file)
+        except Exception as e: #just print the exception and keep going
+            print(e)
     
-if "-info" in sys.argv:
-    print(info_s)
-    sys.exit()
- 
-    
-filenames = []
-for i in range(1,len(sys.argv)):
-    filenames += glob(sys.argv[i])
+    print("All done")
 
 
-for file in filenames:
-    try:
-        ciftostr.writeSTR(file)
-    except Exception as e: #just print the exception and keep going
-        print(e)
-print("All done")
 
+main()
 
-print("Thanks for using me.")
+print("Thanks for using CIFtoSTR.")
 
 
 
