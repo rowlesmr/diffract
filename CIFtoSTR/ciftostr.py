@@ -22,7 +22,7 @@ def writeSTR(ciffile):
         s = createSTR(cif, data)
         f = os.path.join(path, getPhaseName(cif, data) + '.str')
         
-        str_file = open(f, "w")
+        str_file = open(f, "w")       
         print("Now writing " + str_file.name + ".")
         str_file.write(s)
         str_file.close()
@@ -202,6 +202,21 @@ def getDictEntry(dct, *keys, default=None):
             pass
     return default
 
+
+def removeNewlineSpaces(s):
+    """
+    Removes all spaces, tabs, new lines, and carriage returns from a string
+    
+    Args:
+        s: a string
+        
+    Returns:
+        A string with no newlines, carriage returns, spaces, or tabs
+     """
+    
+    return s.replace('\n', '').replace('\r', '').replace(' ','').replace('t','')
+
+
      
 def getPhaseName(cif, data):
     """
@@ -223,7 +238,15 @@ def getPhaseName(cif, data):
                                         "_chemical_name_systematic", 
                                         "_chemical_name_structure_type", 
                                         default = "")
-    return concat(phasename, data)
+    phasename = removeNewlineSpaces(phasename)
+    
+    #check that all the types of non-name names are accounted for.
+    if phasename == "" or\
+    phasename == "." or\
+    phasename == "?":
+        return data
+    else:
+        return concat(phasename, data)
     
     
 def getSpaceGroup(cif, data):
