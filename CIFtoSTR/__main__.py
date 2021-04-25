@@ -5,19 +5,18 @@ Created on Fri Apr 23 10:57:06 2021
 @author: Matthew Rowles
 """
 
-
-import ciftostr
-import PySimpleGUI as sg #for gui
-import sys #for command line arguments
 from glob import glob #for command line arguments
+import sys #for command line arguments
+import PySimpleGUI as sg #for gui
+import ciftostr
 
-    
 
-help_s = \
+
+HELP = \
 "\nThis program converts an arbitrary number of CIFs, each containing an arbitrary number of \n"+\
 "structures, into a number of individual STR files that are (supposed to be) compatible with TOPAS.\n\n"+ \
 \
-"Choose the files you want to convert using the 'Browse' button, then click 'Convert' to convert them.\n]n"+\
+"Choose the files you want to convert using the 'Browse' button, then click 'Convert' to convert them.\n\n"+\
 \
 "If you would like to run it in the command line, you need to provide some command line arguments:\n"+\
 ">python ciftostr.pyz *.cif\n or you can type the individual names of CIFs to use after the pyz file.\n\n" + \
@@ -25,11 +24,11 @@ help_s = \
 "For information on exactly what the program does, click 'Info', or run >python ciftostr.pyz -info\n\n"+\
 \
 "Matthew Rowles. \nmatthew.rowles@curtin.edu.au \n22 Apr 21\n------------------------\n"
-    
- 
 
 
-info_s = \
+
+
+INFO = \
 "This program is designed to reformat data from a CIF format into the STR format suitable\n"+\
 "for use by the Rietveld analysis software, TOPAS. It doesn't carry out any validation checks\n"+\
 "to ensure the data is consistent, but simply transcribes the data as given in the CIF.\n\n"+\
@@ -91,29 +90,40 @@ info_s = \
 \
 "Thanks, Matthew Rowles.\n"+\
 "matthew.rowles@curtin.edu.au\n"+\
-"24 Apr 21"    
+"24 Apr 21"
 
 
 
 def gui():
+    """
+    Defines the GUI elements.
+
+    Returns
+    -------
+    None.
+
+    """
     #https://stackoverflow.com/questions/55573754/load-multiple-file-with-pysimplegui
     #https://github.com/PySimpleGUI/PySimpleGUI/blob/master/DemoPrograms/Demo_Script_Launcher_Realtime_Output.py
     layout = [
-              [sg.Multiline(size=(90,20), 
-                            background_color='black', 
-                            text_color='white', 
-                            reroute_stdout=True, 
+              [sg.Multiline(size=(90,20),
+                            background_color='black',
+                            text_color='white',
+                            reroute_stdout=True,
                             reroute_stderr=True,
                             autoscroll = True)],
-              [sg.Input(key='_FILES_'), sg.FilesBrowse(file_types=(("CIFs", "*.cif"),("All files", "*.*"),))], 
+
+              [sg.Input(key='_FILES_'),
+               sg.FilesBrowse(file_types=(("CIFs", "*.cif"),("All files", "*.*"),))],
+
               [sg.Button('Convert'), sg.Button('Exit'), sg.Button('Info')]
              ]
-    
+
     window = sg.Window("CIFtoSTR", layout, finalize=True)
 
     #initial help text every time you open the program.
-    print(help_s)
-    
+    print(HELP)
+
     while True:             # Event Loop
         event, values = window.read() #window.read() is a tuple
         filenames = values['_FILES_'].split(';') # list of filenames
@@ -122,9 +132,9 @@ def gui():
         elif event == 'Convert':
             #this does the actual CIF to STR conversion
             convertCifs(filenames)
-            
+
         elif event == 'Info':
-            print(info_s)
+            print(INFO)
             #runCommand(cmd=values['-IN-'], window=window)
     window.close()
 
@@ -132,27 +142,36 @@ def gui():
 
 
 def main():
+    """
+    Defines the main method for the program to actually run.
+
+    Returns
+    -------
+    None.
+
+   
+    """
     if len(sys.argv) <= 1: #Assume the user wants the gui
-        
-        print(help_s) #just in case there are commandline people wanting to know.
+
+        print(HELP) #just in case there are commandline people wanting to know.
         gui()
-        
+
         sys.exit()
-     
-        
+
+
     if "-info" in sys.argv:
-        print(info_s)
+        print(INFO)
         sys.exit()
-     
-        
+
+
     filenames = []
     for i in range(1,len(sys.argv)):
         filenames += glob(sys.argv[i])
-    
-    
+
+
     #this does the actual CIF to STR conversion
     convertCifs(filenames)
-    
+
 
 
 
@@ -172,7 +191,7 @@ def convertCifs(filenames):
         except Exception as e: #just print the exception and keep going
             print(e)
     print("All done.")
-    
+
 
 
 
@@ -181,6 +200,3 @@ def convertCifs(filenames):
 main()
 
 print("Thanks for using CIFtoSTR.")
-
-
-
