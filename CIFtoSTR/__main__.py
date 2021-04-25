@@ -9,7 +9,11 @@ from glob import glob #for command line arguments
 import sys #for command line arguments
 import PySimpleGUI as sg #for gui
 import ciftostr
+import citationdate
 
+
+CITATION = "\nMatthew R. Rowles, CIFtoSTR, https://github.com/rowlesmr/diffract/tree/main/CIFtoSTR, "+\
+           "version date: " + citationdate.datetime + "\n"
 
 
 HELP = \
@@ -19,11 +23,14 @@ HELP = \
 "Choose the files you want to convert using the 'Browse' button, then click 'Convert' to convert them.\n\n"+\
 \
 "If you would like to run it in the command line, you need to provide some command line arguments:\n"+\
-">python ciftostr.pyz *.cif\n or you can type the individual names of CIFs to use after the pyz file.\n\n" + \
+">python ciftostr.pyz *.cif\nor you can type the individual names of CIFs to use after the pyz file.\n\n" + \
 \
 "For information on exactly what the program does, click 'Info', or run >python ciftostr.pyz -info\n\n"+\
 \
-"Matthew Rowles. \nmatthew.rowles@curtin.edu.au \n22 Apr 21\n------------------------\n"
+"Matthew Rowles. matthew.rowles@curtin.edu.au\n\n"+\
+\
+"For citation: "+ CITATION + \
+"------------------------\n"
 
 
 
@@ -89,8 +96,10 @@ INFO = \
 "should work in that instance.\n\n"+\
 \
 "Thanks, Matthew Rowles.\n"+\
-"matthew.rowles@curtin.edu.au\n"+\
-"24 Apr 21"
+"matthew.rowles@curtin.edu.au\n\n"+\
+    \
+"For citation: "+ CITATION +\
+"\n------------------------\n"
 
 
 
@@ -135,7 +144,7 @@ def gui():
 
         elif event == 'Info':
             print(INFO)
-            #runCommand(cmd=values['-IN-'], window=window)
+
     window.close()
 
 
@@ -199,4 +208,4 @@ def convertCifs(filenames):
 
 main()
 
-print("Thanks for using CIFtoSTR.")
+print("Thanks for using CIFtoSTR. If you liked this, please cite " + CITATION)

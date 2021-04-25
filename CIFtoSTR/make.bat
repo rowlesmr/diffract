@@ -8,6 +8,12 @@ REM Set up the current working directory files
 del %filename%.pyz
 
 
+REM get the current date and time for the version number
+for /f %%i in ('date /t') do set mydate=%%i
+for /f %%i in ('time /t') do set mytime=%%i
+echo datetime = "%mydate% %mytime%h" > citationdate.py
+
+
 REM Make the python archive - zip lets you exclude locations
 zip %filename%.pyz *.* -r -x make.bat testcifs* __pycache__* build* cache* %filename%.exe
 

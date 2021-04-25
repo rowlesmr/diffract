@@ -11,6 +11,8 @@ import os #ntpath #to separate path and filename
 #https://pypi.org/project/PyCifRW/4.4/  https://bitbucket.org/jamesrhester/pycifrw/downloads/
 import CifFile as cf
 
+#cif = cf.ReadCif("9013467.cif")
+#data = cif.keys()[0]
 
 
 
@@ -225,6 +227,73 @@ def getDictEntry(dct, *keys, default=None):
     return default
 
 
+def padStringList(l):
+    """
+    Given a list of atomic ordinates, labels, or the like, pad the length of the strings 
+    such that they are all the same
+
+    Parameters
+    ----------
+    l : list of strings
+    
+    Returns
+    -------
+    List of strings, all of the same length
+
+    """
+    # if any strings start with '-', it's probably a negative number, and I need to prepend 
+    #  a space to those that don't start with a '-'.
+    negativeString = False
+    for s in l:
+        if s.startswith("-"):
+            negativeString =True
+            
+    
+    if negativeString: #Prepend the string
+        for i in range(len(l)):
+            if not l[i].startswith("-"):
+                l[i] = " "+l[i]
+                
+    #what is the max str len?
+    maxLen = 0          
+    for s in l:
+        if len(s) > maxLen:
+            maxLen = len(s)
+    
+    for i in range(len(l)):
+        l[i] = postPadString(l[i], maxLen)
+ 
+    return l
+                
+        
+        
+def postPadString(s, d):
+    """
+    Add spaces to the end of a string until it is the length given by d
+    If len is already more than d, it just returns s
+
+    Parameters
+    ----------
+    s : string you want to pad at the end with spaces
+    d : Integer that you want the final string length to be
+
+    Returns
+    -------
+    s : String of length d. If len(s) < d originalyy, then s is returned unchanged.
+
+    """
+    while len(s) < d:
+        s += " "
+    return s
+        
+    
+
+
+
+
+
+
+
 def removeNewlineSpaces(s):
     """
     Removes new lines, carriage returns, and leading/trailing whitespace from a string.
@@ -348,17 +417,17 @@ def getUnitCell(cif, data):
         if al == be and be == ga and al == float("90"): #ortho
             s = concat("\ta",a_s,"\n\tb",b_s,"\n\tc",c_s, sep=" ")
         if al != be and al != ga and be != ga: #tric
-            s = concat("\ta",a_s,"\n\tb",b_s,"\n\tc",c_s,"\n\tal",al_s,"\n\tbe",be_s,"\n\tga",ga_s, sep=" ")
+            s = concat("\ta ",a_s,"\n\tb ",b_s,"\n\tc ",c_s,"\n\tal",al_s,"\n\tbe",be_s,"\n\tga",ga_s, sep=" ")
         if al == be and al != ga and al == float("90"): #mono_1
-            s = concat("\ta",a_s,"\n\tb",b_s,"\n\tc",c_s,"\n\tga",ga_s, sep=" ")
+            s = concat("\ta ",a_s,"\n\tb ",b_s,"\n\tc ",c_s,"\n\tga",ga_s, sep=" ")
         if al == ga and al != be and al == float("90"): #mono_2
-            s = concat("\ta",a_s,"\n\tb",b_s,"\n\tc",c_s,"\n\tbe",be_s, sep=" ")
+            s = concat("\ta ",a_s,"\n\tb ",b_s,"\n\tc ",c_s,"\n\tbe",be_s, sep=" ")
         if be == ga and be != al and be == float("90"): #mono_3
-            s = concat("\ta",a_s,"\n\tb",b_s,"\n\tc",c_s,"\n\tal",al_s, sep=" ")
+            s = concat("\ta ",a_s,"\n\tb ",b_s,"\n\tc ",c_s,"\n\tal",al_s, sep=" ")
 
     #to catch everything else
     else:
-        s = concat("\ta",a_s,"\n\tb",b_s,"\n\tc",c_s,
+        s = concat("\ta ",a_s,"\n\tb ",b_s,"\n\tc ",c_s,
                    "\n\tal",al_s,"\n\tbe",be_s,"\n\tga",ga_s, sep=" ")
 
     return s
@@ -417,12 +486,12 @@ def getAtoms(cif, data):
     Raises:
         KeyError: if any of the site label or fractional coordinate keys are not present.
     """
-    labels = cif[data]["_atom_site_label"]
+    labels = padStringList(cif[data]["_atom_site_label"])
     
     # to valToFrac first, as a real match wouldn't have any errors to strip
-    x = stripBrackets(valToFrac(cif[data]["_atom_site_fract_x"]))
-    y = stripBrackets(valToFrac(cif[data]["_atom_site_fract_y"]))
-    z = stripBrackets(valToFrac(cif[data]["_atom_site_fract_z"]))
+    x = padStringList(stripBrackets(valToFrac(cif[data]["_atom_site_fract_x"])))
+    y = padStringList(stripBrackets(valToFrac(cif[data]["_atom_site_fract_y"])))
+    z = padStringList(stripBrackets(valToFrac(cif[data]["_atom_site_fract_z"])))
 
     #type of atom
     try:
@@ -435,15 +504,18 @@ def getAtoms(cif, data):
         atoms = []
         for l in labels:
             atoms += [isThisAnAtom(l)]
+    atoms = padStringList(atoms)
 
     #occupancy
     try:
         occ = stripBrackets(cif[data]["_atom_site_occupancy"])
     except KeyError:
         occ = ["1"] * len(labels)
+    occ = padStringList(occ)
 
     #ADPs
-    Biso = getBeq(cif, data)
+    Biso = padStringList(getBeq(cif, data))
+    
 
     r = ""
     for i in range(len(labels)):
@@ -471,8 +543,8 @@ def makeSiteString(label, x, y, z, atom, occ, beq):
     Returns:
         A string containing the atomic site parameters in STR format.
     """
-    return concat("\tsite",label,"num_posns 0 x", x, "y", y, "z", z,
-                  "occ", atom, occ, "beq",beq, "\n", sep = " ")
+    return concat("\tsite",label,"num_posns 0\tx", x, "y", y, "z", z,
+                  "occ", atom, occ, "beq", beq, "\n", sep = " ")
 
 
 def isThisAnAtom(s):
