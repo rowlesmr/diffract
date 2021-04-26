@@ -33,7 +33,7 @@ def writeSTR(ciffile):
 
     for data in datakeys:
         s = createSTR(cif, data)
-        f = os.path.join(path, getPhaseName(cif, data) + '.str')
+        f = os.path.join(path, cleanFileName(getPhaseName(cif, data)) + '.str')
 
         str_file = open(f, "w")
         print("Now writing " + str_file.name + ".")
@@ -287,28 +287,60 @@ def postPadString(s, d):
     return s
         
     
-
-
-
-
-
-
-
-def removeNewlineSpaces(s):
+def cleanPhaseName(s):
     """
-    Removes new lines, carriage returns, and leading/trailing whitespace from a string.
-    Replace spaces and tabs with '_'
-    Replace '\' and '/' with '-'
+    Removes new lines, carriage returns, and leading/trailing whitespace from a 
+    string representing a phase name
 
     Args:
         s: a string
 
     Returns:
-        A string with no newlines and carriage returns, and '_' instead of spaces and tabs.
+        A string with no newlines, carriage returns, or leading/trailing whitespace
      """
 
    
-    return s.strip().replace('\n', '').replace('\r', '').replace(' ','_').replace('\t','_').replace('\\','-').replace('/','-')
+    return s.strip().replace('\n', '').replace('\r', '')
+
+
+def cleanFileName(s):
+    """
+    Replaces illegal characters from a string which is to be used as a filename. 
+    This doesn't deal with the path, just the name. Also, not the extension.
+    
+    eg 'string' could be used to construct 'C:\important\string.cif' at a later point in the program.
+    
+    / \ | : * ? " < >  are replaced by "_"
+    
+    Whitespace is also replaced by "_"
+    
+    Also checks for illegal names like 'CON', and 'PRN'.
+    
+    Yes, the is Windows-centric, but so is TOPAS.
+    
+    Trying to follow guidelines in:
+    https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions
+
+    Args:
+        s: a string
+
+    Returns:
+        A string with no illegal characters
+     """
+     
+    
+    illegalNames = ( "CON",  "PRN",  "AUX",  "NUL", "COM1", "COM2", "COM3", "COM4", 
+                    "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", 
+                    "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",    ".",   "..")     
+
+    if s.upper() in illegalNames:
+        s = s + "_"
+        
+    if s.endswith("."):
+        s[:-1] + "_"
+
+    return re.sub("[\\\\/:*?\"<>|\s]", "_", s)
+
 
 
 
@@ -332,7 +364,7 @@ def getPhaseName(cif, data):
                                         "_chemical_name_systematic",
                                         "_chemical_name_structure_type",
                                         default = "")
-    phasename = removeNewlineSpaces(phasename)
+    phasename = cleanPhaseName(phasename)
 
     r = ""
     #check that all the types of non-name names are accounted for.
