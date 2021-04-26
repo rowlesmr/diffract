@@ -8,10 +8,11 @@ Created on Mon Apr 19 17:10:25 2021
 import math
 import re #regular expression
 import os #ntpath #to separate path and filename
+import copy
 #https://pypi.org/project/PyCifRW/4.4/  https://bitbucket.org/jamesrhester/pycifrw/downloads/
 import CifFile as cf
 
-#cif = cf.ReadCif("9013467.cif")
+#cif = cf.ReadCif("testcifs\\1000073.cif")
 #data = cif.keys()[0]
 
 
@@ -73,7 +74,8 @@ def stripBrackets(l):
     Returns:
         A list of strings, or a single string, with no brackets at the end of each string
      """
-
+     
+    l = l[:] # get a copy 
     changeMe = False
     if isinstance(l, str): #if it's a single string, make it a list
         l = [l]
@@ -98,17 +100,18 @@ def stripBrackets(l):
 def changeNAValue(l):
     """
     If a string consists of a single question mark ('?') or full stop ('.'),
-    it is replaced with a zero ('0').
+    it is replaced with a None
     These are normally markers of "no value recorded"
 
     Args:
         l: A list of strings, or a single string.
     Returns:
-        A list of strings, or a single string, with zero in place of a single question
+        A list of strings, or a single string, with None in place of a single question
         mark or full stop
      """
 
     changeMe = False
+    l = l[:] # take a copy
     if isinstance(l, str): #if it's a single string, make it a list
         l = [l]
         changeMe = True
@@ -117,7 +120,7 @@ def changeNAValue(l):
         s = l[i]
 
         if s in ("?", "."):
-            l[i] = "0."
+            l[i] = None
 
     if changeMe: #if t was a list, change it back
         l = l[0]
@@ -172,6 +175,8 @@ def valToFrac(l):
     fiveSixthFrac= "=5/6;"
 
 
+
+    l = l[:] #get a copy
     fractionDetected = False
     changeMe = False
     if isinstance(l, str): #if it's a single string, make it a list
@@ -205,9 +210,9 @@ def valToFrac(l):
     return l
 
 
-def getDictEntry(dct, *keys, default=None):
+def getDictEntryCopy(dct, *keys, default=None):
     """
-    Returns the first dictionary value to match from an arbitrary number of given keys.
+    Returns a deepcopy of the first dictionary value to match from an arbitrary number of given keys.
     If there is no match, the default value is returned.
     #https://stackoverflow.com/a/67187811/36061
 
@@ -217,11 +222,11 @@ def getDictEntry(dct, *keys, default=None):
         *keys: an arbitrary number of keys in order of preference for return.
         default: The value to return if no matching entry is found in the dictionary.
     Returns:
-        The dictionary value associated with the first key to match, or the default value.
+        A deepcopy of the dictionary value associated with the first key to match, or the default value.
      """
     for key in keys:
         try:
-            return dct[key]
+            return copy.deepcopy(dct[key])
         except KeyError:
             pass
     return default
@@ -244,6 +249,7 @@ def padStringList(l):
     # if any strings start with '-', it's probably a negative number, and I need to prepend 
     #  a space to those that don't start with a '-'.
     negativeString = False
+    l=l[:] #don't alter the original
     for s in l:
         if s.startswith("-"):
             negativeString =True
@@ -298,8 +304,6 @@ def cleanPhaseName(s):
     Returns:
         A string with no newlines, carriage returns, or leading/trailing whitespace
      """
-
-   
     return s.strip().replace('\n', '').replace('\r', '')
 
 
@@ -326,9 +330,7 @@ def cleanFileName(s):
 
     Returns:
         A string with no illegal characters
-     """
-     
-    
+     """    
     illegalNames = ( "CON",  "PRN",  "AUX",  "NUL", "COM1", "COM2", "COM3", "COM4", 
                     "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", 
                     "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",    ".",   "..")     
@@ -359,16 +361,16 @@ def getPhaseName(cif, data):
     Returns:
         A string denoting the name of the phase
      """
-    phasename = getDictEntry(cif[data], "_chemical_name_mineral",
-                                        "_chemical_name_common",
-                                        "_chemical_name_systematic",
-                                        "_chemical_name_structure_type",
-                                        default = "")
+    phasename = getDictEntryCopy(cif[data], "_chemical_name_mineral",
+                                            "_chemical_name_common",
+                                            "_chemical_name_systematic",
+                                            "_chemical_name_structure_type",
+                                            default = "")
     phasename = cleanPhaseName(phasename)
 
     r = ""
     #check that all the types of non-name names are accounted for.
-    if phasename in ("", ".", "?"):
+    if phasename in ("", ".", "?", None):
         r = data
     else:
         r = concat(phasename, data)
@@ -391,11 +393,11 @@ def getSpaceGroup(cif, data):
     Returns:
         A string denoting the space group of the phase, as given in the CIF.
      """
-    spacegroup = getDictEntry(cif[data], "_symmetry_space_group_name_H-M",
-                                         "_symmetry_Int_Tables_number",
-                                         "_space_group_name_H-M_alt",
-                                         "_space_group_IT_number",
-                                         default = "")
+    spacegroup = getDictEntryCopy(cif[data], "_symmetry_space_group_name_H-M",
+                                             "_symmetry_Int_Tables_number",
+                                             "_space_group_name_H-M_alt",
+                                             "_space_group_IT_number",
+                                             default = "")
 
     return spacegroup
 
@@ -418,12 +420,12 @@ def getUnitCell(cif, data):
         KeyError: if any of the unit cell parameters are not present in the datablock.
     """
 
-    a_s  = stripBrackets(cif[data]["_cell_length_a"])
-    b_s  = stripBrackets(cif[data]["_cell_length_b"])
-    c_s  = stripBrackets(cif[data]["_cell_length_c"])
-    al_s = stripBrackets(cif[data]["_cell_angle_alpha"])
-    be_s = stripBrackets(cif[data]["_cell_angle_beta"])
-    ga_s = stripBrackets(cif[data]["_cell_angle_gamma"])
+    a_s  = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_a"))
+    b_s  = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_b"))
+    c_s  = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_c"))
+    al_s = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_alpha"))
+    be_s = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_beta"))
+    ga_s = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_gamma"))
 
     a  = float(a_s)
     b  = float(b_s)
@@ -477,12 +479,12 @@ def getUnitCell2(cif, data):
     Raises:
         KeyError: if any of the unit cell parameters are not present in the datablock.
     """
-    a = stripBrackets(cif[data]["_cell_length_a"])
-    b = stripBrackets(cif[data]["_cell_length_b"])
-    c = stripBrackets(cif[data]["_cell_length_c"])
-    al = stripBrackets(cif[data]["_cell_angle_alpha"])
-    be = stripBrackets(cif[data]["_cell_angle_beta"])
-    ga = stripBrackets(cif[data]["_cell_angle_gamma"])
+    a  = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_a"))
+    b  = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_b"))
+    c  = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_c"))
+    al = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_alpha"))
+    be = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_beta"))
+    ga = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_gamma"))
 
     return concat("\ta",a,"b",b,"c",c,"\n\tal",al,"be",be,"ga",ga, sep=" ")
 
@@ -518,17 +520,16 @@ def getAtoms(cif, data):
     Raises:
         KeyError: if any of the site label or fractional coordinate keys are not present.
     """
-    labels = padStringList(cif[data]["_atom_site_label"])
+    labels = padStringList(getDictEntryCopy(cif[data],"_atom_site_label"))
     
     # to valToFrac first, as a real match wouldn't have any errors to strip
-    x = padStringList(stripBrackets(valToFrac(cif[data]["_atom_site_fract_x"])))
-    y = padStringList(stripBrackets(valToFrac(cif[data]["_atom_site_fract_y"])))
-    z = padStringList(stripBrackets(valToFrac(cif[data]["_atom_site_fract_z"])))
+    x = padStringList(stripBrackets(valToFrac(getDictEntryCopy(cif[data],"_atom_site_fract_x"))))
+    y = padStringList(stripBrackets(valToFrac(getDictEntryCopy(cif[data],"_atom_site_fract_y"))))
+    z = padStringList(stripBrackets(valToFrac(getDictEntryCopy(cif[data],"_atom_site_fract_z"))))
 
     #type of atom
     try:
-        atoms = cif[data]["_atom_site_type_symbol"]
-
+        atoms = getDictEntryCopy(cif[data],"_atom_site_type_symbol")
         atoms = [fixAtomSiteType(i) for i in atoms]
 
     except KeyError:
@@ -540,14 +541,13 @@ def getAtoms(cif, data):
 
     #occupancy
     try:
-        occ = stripBrackets(cif[data]["_atom_site_occupancy"])
+        occ = stripBrackets(getDictEntryCopy(cif[data],"_atom_site_occupancy"))
     except KeyError:
         occ = ["1"] * len(labels)
     occ = padStringList(occ)
 
     #ADPs
     Biso = padStringList(getBeq(cif, data))
-    
 
     r = ""
     for i in range(len(labels)):
@@ -739,7 +739,7 @@ def getBeq(cif, data):
     goToEnd = False
     r = []
     try:
-        r = getAniso(cif,data)
+        r = getAnisoAsIso(cif,data)
         goToEnd = True
     except KeyError:
         pass
@@ -760,8 +760,13 @@ def getBeq(cif, data):
 
     #if we get here, there were no B values in the CIF. Booo!
     if not goToEnd:
-        print("No atomic displacement parameters found. Defaulting to a value of 1.")
-        r = ["1."]*len(cif[data]["_atom_site_label"])
+        r = [None]*len(getDictEntryCopy(cif[data],"_atom_site_label"))
+
+
+    for i in range(len(r)):
+        if r[i] is None:
+            print("Warning! Biso value missing! Default value of 1 entered")
+            r[i] = "1."
 
 
     #do the final check for negative values
@@ -787,7 +792,35 @@ def getBiso(cif, data):
     Raises:
         KeyError: if the key "_atom_site_B_iso_or_equiv" is not present.
     """
-    return changeNAValue(stripBrackets(cif[data]["_atom_site_B_iso_or_equiv"]))
+    return changeNAValue(stripBrackets(getDictEntryCopy(cif[data],"_atom_site_B_iso_or_equiv")))
+
+
+
+def convertUToB(s):
+    """
+    Take a string representing a U value and return a string representing a B value
+    B = 8*Pi^2 * U
+
+    Parameters
+    ----------
+    s : a string representing a U value. Could be None
+
+    Returns
+    -------
+    A string representing a B value. Could be None.
+
+    """
+    if s is None:
+        return None
+    
+    s = float(s)
+    s = 8*math.pi**2*s
+    s = str(round(float(s), 3)) # round B value to 3 d.p.
+    return s
+    
+
+
+
 
 
 def getUiso(cif, data):
@@ -806,22 +839,15 @@ def getUiso(cif, data):
     Raises:
         KeyError: if the key "_atom_site_U_iso_or_equiv" is not present.
     """
-    Uiso = changeNAValue(stripBrackets(cif[data]["_atom_site_U_iso_or_equiv"]))
+    Uiso = changeNAValue(stripBrackets(getDictEntryCopy(cif[data],"_atom_site_U_iso_or_equiv")))
 
-    Uiso = [float(i) for i in Uiso] #https://stackoverflow.com/a/1614247/36061 convert string list to float list
-    Biso = [i * 8 * math.pi**2 for i in Uiso] #convert to Biso
-    Biso = [str(i) for i in Biso]
-    Biso = [i[0:i.index(".")+4] for i in Biso] #truncate string at 3 d.p.
+    Biso = [convertUToB(i) for i in Uiso] ##https://stackoverflow.com/a/1614247/36061 convert string list to float list
 
-    #fx the no given B value
-    for i in range(len(Biso)):
-        if Biso[i] == "0.0": #ie there is no value
-            Biso[i] = "1."
 
     return Biso
 
 
-def getAniso(cif,data):
+def getAnisoAsIso(cif,data):
     """
     Returns a list of strings giving the equivalent isotropic atomic displacement parameters,
     B, of all atomic sites.
@@ -843,8 +869,8 @@ def getAniso(cif,data):
         KeyError: if the key "_atom_site_aniso_label" is not present.
     """
 
-    labelsAniso = cif[data]["_atom_site_aniso_label"]
-    labels      = cif[data]["_atom_site_label"]
+    labelsAniso = getDictEntryCopy(cif[data],"_atom_site_aniso_label") #get a copy of the labels!!!
+    labels      = getDictEntryCopy(cif[data],"_atom_site_label") # I alwys believe the labels. they are cannonical
 
     #if we get to here, then there should be some sort of anisotropic values
     try:
@@ -852,37 +878,33 @@ def getAniso(cif,data):
     except KeyError:
         Bequiv = getUaniso(cif,data) #then it should be Uaniso
 
-
     #do comparison with atom_labels to make sure
     # every atom has a Bequiv
     if labelsAniso == labels: #everything is there
         return Bequiv
 
-    #if we get to here, labelsAniso != labels, and we need to figure out what is good.
+    #if we get to here, labelsAniso != labels, and we need to figure 
+    #  out which atoms are missing, and if they have B or Uiso value
     try:
         Biso = getBiso(cif, data)
     except KeyError:
         try:
             Biso = getUiso(cif, data)
         except KeyError:
-            Biso = ["1."] * len(labels)
+            Biso = [None] * len(labels)
 
     #I now have the Biso values from the atom_label list
 
     #need to build a list of Biso values to return
-    r = ["1."] * len(labels)
-    for i in range(len(labels)):
-        atom_label = labels[i]
+    r = [None] * len(labels)
+    for i in range(len(labels)): # iterate over all of the atom labels
+        atom_label = labels[i] 
         try:
-            aniso_index = labelsAniso.index(atom_label)
-            r[i] = Bequiv[aniso_index]
+            aniso_index = labelsAniso.index(atom_label) #if the atom label matches aniso label, 
+            r[i] = Bequiv[aniso_index] #  then copy that value into the returning list
         except ValueError:
-            r[i] = Biso[i]
+            r[i] = Biso[i] #if the label doesn't match, then copy the result from the Biso list
 
-
-    if "1." in r:
-        print("At least one atom has no atomic displacement parameter. "+\
-              "A default value of 1 has been entered.")
 
     return r
 
@@ -905,14 +927,14 @@ def getBaniso(cif,data):
     """
 
     #convert the str lists to float lists
-    B11 = [float(i) for i in stripBrackets(cif[data]["_atom_site_aniso_B_11"])]
-    B22 = [float(i) for i in stripBrackets(cif[data]["_atom_site_aniso_B_22"])]
-    B33 = [float(i) for i in stripBrackets(cif[data]["_atom_site_aniso_B_33"])]
+    B11 = [float(i) for i in stripBrackets(getDictEntryCopy(cif[data],"_atom_site_aniso_B_11"))]
+    B22 = [float(i) for i in stripBrackets(getDictEntryCopy(cif[data],"_atom_site_aniso_B_22"))]
+    B33 = [float(i) for i in stripBrackets(getDictEntryCopy(cif[data],"_atom_site_aniso_B_33"))]
 
     Bequiv = [(B11[i] + B22[i] + B33[i])/3.0 for i in range(len(B11))] #get the average of the three values
 
-    Bequiv = [str(i) for i in Bequiv]
-    Bequiv = [i[0:i.index(".")+4] for i in Bequiv] #truncate string at 3 d.p.
+    Bequiv = [str(round(float(i), 3)) for i in Bequiv] # round to 3 d.p.
+    
 
     return Bequiv
 
@@ -934,15 +956,12 @@ def getUaniso(cif,data):
         KeyError: if any the keys "_atom_site_aniso_U_11", "_22", or "_33" is not present.
     """
     #convert the str lists to float lists
-    U11 = [float(i) for i in stripBrackets(cif[data]["_atom_site_aniso_U_11"])]
-    U22 = [float(i) for i in stripBrackets(cif[data]["_atom_site_aniso_U_22"])]
-    U33 = [float(i) for i in stripBrackets(cif[data]["_atom_site_aniso_U_33"])]
+    U11 = [float(i) for i in stripBrackets(getDictEntryCopy(cif[data],"_atom_site_aniso_U_11"))]
+    U22 = [float(i) for i in stripBrackets(getDictEntryCopy(cif[data],"_atom_site_aniso_U_22"))]
+    U33 = [float(i) for i in stripBrackets(getDictEntryCopy(cif[data],"_atom_site_aniso_U_33"))]
 
     #get the average of the three values
-    Bequiv = [8*math.pi**2 * (U11[i] + U22[i] + U33[i])/3.0 for i in range(len(U11))]
-
-    Bequiv = [str(i) for i in Bequiv]
-    Bequiv = [i[0:i.index(".")+4] for i in Bequiv] #truncate string at 3 d.p.
+    Bequiv = [convertUToB(str((U11[i] + U22[i] + U33[i])/3.0)) for i in range(len(U11))]
 
     return Bequiv
 
