@@ -75,6 +75,9 @@ def stripBrackets(l):
         A list of strings, or a single string, with no brackets at the end of each string
      """
      
+    if l is None:
+        return None
+
     l = l[:] # get a copy 
     changeMe = False
     if isinstance(l, str): #if it's a single string, make it a list
@@ -109,6 +112,9 @@ def changeNAValue(l):
         A list of strings, or a single string, with None in place of a single question
         mark or full stop
      """
+    
+    if l is None:
+        return None
 
     changeMe = False
     l = l[:] # take a copy
@@ -174,7 +180,8 @@ def valToFrac(l):
     twoThirdFrac = "=2/3;"
     fiveSixthFrac= "=5/6;"
 
-
+    if l is None:
+        return None
 
     l = l[:] #get a copy
     fractionDetected = False
@@ -232,6 +239,22 @@ def getDictEntryCopy(dct, *keys, default=None):
     return default
 
 
+def getDictEntryCopyThrowError(dct, key):
+    """
+    Returns a deepcopy of the dictionary value from a matching key.
+
+    Args:
+        dct: A dictionary
+        key: an keys.
+    Returns:
+        A deepcopy of the dictionary value associated with the key.
+    
+    Raises:
+        KeyError if the key is not present
+     """
+    return copy.deepcopy(dct[key])
+    
+
 def padStringList(l):
     """
     Given a list of atomic ordinates, labels, or the like, pad the length of the strings 
@@ -249,6 +272,10 @@ def padStringList(l):
     # if any strings start with '-', it's probably a negative number, and I need to prepend 
     #  a space to those that don't start with a '-'.
     negativeString = False
+    
+    if l is None:
+        return None
+    
     l=l[:] #don't alter the original
     for s in l:
         if s.startswith("-"):
@@ -288,6 +315,9 @@ def postPadString(s, d):
     s : String of length d. If len(s) < d originalyy, then s is returned unchanged.
 
     """
+    if s is None:
+        return None
+    
     while len(s) < d:
         s += " "
     return s
@@ -420,12 +450,12 @@ def getUnitCell(cif, data):
         KeyError: if any of the unit cell parameters are not present in the datablock.
     """
 
-    a_s  = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_a"))
-    b_s  = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_b"))
-    c_s  = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_c"))
-    al_s = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_alpha"))
-    be_s = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_beta"))
-    ga_s = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_gamma"))
+    a_s  = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_length_a"))
+    b_s  = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_length_b"))
+    c_s  = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_length_c"))
+    al_s = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_angle_alpha"))
+    be_s = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_angle_beta"))
+    ga_s = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_angle_gamma"))
 
     a  = float(a_s)
     b  = float(b_s)
@@ -479,12 +509,12 @@ def getUnitCell2(cif, data):
     Raises:
         KeyError: if any of the unit cell parameters are not present in the datablock.
     """
-    a  = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_a"))
-    b  = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_b"))
-    c  = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_c"))
-    al = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_alpha"))
-    be = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_beta"))
-    ga = stripBrackets(getDictEntryCopy(cif[data],"_cell_length_gamma"))
+    a  = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_length_a"))
+    b  = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_length_b"))
+    c  = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_length_c"))
+    al = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_angle_alpha"))
+    be = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_angle_beta"))
+    ga = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_angle_gamma"))
 
     return concat("\ta",a,"b",b,"c",c,"\n\tal",al,"be",be,"ga",ga, sep=" ")
 
@@ -520,16 +550,16 @@ def getAtoms(cif, data):
     Raises:
         KeyError: if any of the site label or fractional coordinate keys are not present.
     """
-    labels = padStringList(getDictEntryCopy(cif[data],"_atom_site_label"))
+    labels = padStringList(getDictEntryCopyThrowError(cif[data],"_atom_site_label"))
     
     # to valToFrac first, as a real match wouldn't have any errors to strip
-    x = padStringList(stripBrackets(valToFrac(getDictEntryCopy(cif[data],"_atom_site_fract_x"))))
-    y = padStringList(stripBrackets(valToFrac(getDictEntryCopy(cif[data],"_atom_site_fract_y"))))
-    z = padStringList(stripBrackets(valToFrac(getDictEntryCopy(cif[data],"_atom_site_fract_z"))))
+    x = padStringList(stripBrackets(valToFrac(getDictEntryCopyThrowError(cif[data],"_atom_site_fract_x"))))
+    y = padStringList(stripBrackets(valToFrac(getDictEntryCopyThrowError(cif[data],"_atom_site_fract_y"))))
+    z = padStringList(stripBrackets(valToFrac(getDictEntryCopyThrowError(cif[data],"_atom_site_fract_z"))))
 
     #type of atom
     try:
-        atoms = getDictEntryCopy(cif[data],"_atom_site_type_symbol")
+        atoms = getDictEntryCopyThrowError(cif[data],"_atom_site_type_symbol")
         atoms = [fixAtomSiteType(i) for i in atoms]
 
     except KeyError:
@@ -541,7 +571,7 @@ def getAtoms(cif, data):
 
     #occupancy
     try:
-        occ = stripBrackets(getDictEntryCopy(cif[data],"_atom_site_occupancy"))
+        occ = stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_occupancy"))
     except KeyError:
         occ = ["1"] * len(labels)
     occ = padStringList(occ)
@@ -760,7 +790,7 @@ def getBeq(cif, data):
 
     #if we get here, there were no B values in the CIF. Booo!
     if not goToEnd:
-        r = [None]*len(getDictEntryCopy(cif[data],"_atom_site_label"))
+        r = [None]*len(getDictEntryCopyThrowError(cif[data],"_atom_site_label"))
 
 
     for i in range(len(r)):
@@ -792,7 +822,7 @@ def getBiso(cif, data):
     Raises:
         KeyError: if the key "_atom_site_B_iso_or_equiv" is not present.
     """
-    return changeNAValue(stripBrackets(getDictEntryCopy(cif[data],"_atom_site_B_iso_or_equiv")))
+    return changeNAValue(stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_B_iso_or_equiv")))
 
 
 
@@ -839,7 +869,7 @@ def getUiso(cif, data):
     Raises:
         KeyError: if the key "_atom_site_U_iso_or_equiv" is not present.
     """
-    Uiso = changeNAValue(stripBrackets(getDictEntryCopy(cif[data],"_atom_site_U_iso_or_equiv")))
+    Uiso = changeNAValue(stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_U_iso_or_equiv")))
 
     Biso = [convertUToB(i) for i in Uiso] ##https://stackoverflow.com/a/1614247/36061 convert string list to float list
 
@@ -869,8 +899,8 @@ def getAnisoAsIso(cif,data):
         KeyError: if the key "_atom_site_aniso_label" is not present.
     """
 
-    labelsAniso = getDictEntryCopy(cif[data],"_atom_site_aniso_label") #get a copy of the labels!!!
-    labels      = getDictEntryCopy(cif[data],"_atom_site_label") # I alwys believe the labels. they are cannonical
+    labelsAniso = getDictEntryCopyThrowError(cif[data],"_atom_site_aniso_label") #get a copy of the labels!!!
+    labels      = getDictEntryCopyThrowError(cif[data],"_atom_site_label") # I alwys believe the labels. they are cannonical
 
     #if we get to here, then there should be some sort of anisotropic values
     try:
@@ -927,9 +957,9 @@ def getBaniso(cif,data):
     """
 
     #convert the str lists to float lists
-    B11 = [float(i) for i in stripBrackets(getDictEntryCopy(cif[data],"_atom_site_aniso_B_11"))]
-    B22 = [float(i) for i in stripBrackets(getDictEntryCopy(cif[data],"_atom_site_aniso_B_22"))]
-    B33 = [float(i) for i in stripBrackets(getDictEntryCopy(cif[data],"_atom_site_aniso_B_33"))]
+    B11 = [float(i) for i in stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_aniso_B_11"))]
+    B22 = [float(i) for i in stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_aniso_B_22"))]
+    B33 = [float(i) for i in stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_aniso_B_33"))]
 
     Bequiv = [(B11[i] + B22[i] + B33[i])/3.0 for i in range(len(B11))] #get the average of the three values
 
@@ -956,9 +986,9 @@ def getUaniso(cif,data):
         KeyError: if any the keys "_atom_site_aniso_U_11", "_22", or "_33" is not present.
     """
     #convert the str lists to float lists
-    U11 = [float(i) for i in stripBrackets(getDictEntryCopy(cif[data],"_atom_site_aniso_U_11"))]
-    U22 = [float(i) for i in stripBrackets(getDictEntryCopy(cif[data],"_atom_site_aniso_U_22"))]
-    U33 = [float(i) for i in stripBrackets(getDictEntryCopy(cif[data],"_atom_site_aniso_U_33"))]
+    U11 = [float(i) for i in stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_aniso_U_11"))]
+    U22 = [float(i) for i in stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_aniso_U_22"))]
+    U33 = [float(i) for i in stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_aniso_U_33"))]
 
     #get the average of the three values
     Bequiv = [convertUToB(str((U11[i] + U22[i] + U33[i])/3.0)) for i in range(len(U11))]
