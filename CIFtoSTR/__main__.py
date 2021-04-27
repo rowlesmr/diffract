@@ -58,8 +58,8 @@ INFO = \
 "enable some standard macros to be used (eg Cubic, Tetragonal...). In any of these fail, then all\n"+\
 "parameters are given as a fail safe.\n\n"+\
 \
-"The space_group is taken from '_symmetry_space_group_name_H-M', '_symmetry_Int_Tables_number', \n"+\
-"'_space_group_name_H-M_alt', or '_space_group_IT_number', in that order. If none of these keys\n"+\
+"The space_group is taken from '_symmetry_space_group_name_H-M', '_space_group_name_H-M_alt', \n"+\
+"'_symmetry_Int_Tables_number', or '_space_group_IT_number', in that order. If none of these keys\n"+\
 "are available, then an empty string is written as the space group. The value of the space group is \n"+\
 "as exactly given in the CIF. No validation or editing is done.\n\n"+\
 \
@@ -138,10 +138,8 @@ def gui():
         filenames = values['_FILES_'].split(';') # list of filenames
         if event in (sg.WIN_CLOSED, 'Exit'):
             break
-        elif event == 'Convert':
-            #this does the actual CIF to STR conversion
-            convertCifs(filenames)
-
+        elif event == 'Convert':          
+            convertCifs(filenames) #this does the actual CIF to STR conversion
         elif event == 'Info':
             print(INFO)
 
@@ -161,25 +159,19 @@ def main():
    
     """
     if len(sys.argv) <= 1: #Assume the user wants the gui
-
         print(HELP) #just in case there are commandline people wanting to know.
         gui()
-
         sys.exit()
-
 
     if "-info" in sys.argv:
         print(INFO)
         sys.exit()
 
-
     filenames = []
     for i in range(1,len(sys.argv)):
         filenames += glob(sys.argv[i])
 
-
-    #this does the actual CIF to STR conversion
-    convertCifs(filenames)
+    convertCifs(filenames) #this does the actual CIF to STR conversion
 
 
 
@@ -200,9 +192,6 @@ def convertCifs(filenames):
         except Exception as e: #just print the exception and keep going
             print(e)
     print("All done.")
-
-
-
 
 
 
