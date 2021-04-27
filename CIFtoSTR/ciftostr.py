@@ -12,7 +12,7 @@ import copy
 #https://pypi.org/project/PyCifRW/4.4/  https://bitbucket.org/jamesrhester/pycifrw/downloads/
 import CifFile as cf
 
-#cif = cf.ReadCif("testcifs\\1000073.cif")
+#cif = cf.ReadCif("testcifs\\9015613.cif")
 #data = cif.keys()[0]
 
 
@@ -56,7 +56,9 @@ def createSTR(cif, data):
      """
     s  = "str\n"
     s += '\tphase_name "' + getPhaseName(cif, data) + '"\n'
-    s += "\tscale @ 0.0001\n\tCS_L(,200)\n"
+    s += "\tPhase_Density_g_on_cm3( 0)\n"
+    s += "\tCS_L( ,200)\n"
+    s += "\tscale @ 0.0001\n"
     s += getUnitCell(cif, data) + "\n"
     s += '\tspace_group "' + getSpaceGroup(cif, data) + '"\n'
     s += getAtoms(cif, data)
@@ -123,9 +125,7 @@ def changeNAValue(l):
         changeMe = True
 
     for i in range(len(l)):
-        s = l[i]
-
-        if s in ("?", "."):
+        if l[i] in ("?", "."):
             l[i] = None
 
     if changeMe: #if t was a list, change it back
@@ -233,7 +233,7 @@ def getDictEntryCopy(dct, *keys, default=None):
      """
     for key in keys:
         try:
-            return copy.deepcopy(dct[key])
+            return getDictEntryCopyThrowError(dct, key)
         except KeyError:
             pass
     return default
@@ -255,7 +255,7 @@ def getDictEntryCopyThrowError(dct, key):
     return copy.deepcopy(dct[key])
     
 
-def padStringList(l):
+def padStringList(l, pad="post"):
     """
     Given a list of atomic ordinates, labels, or the like, pad the length of the strings 
     such that they are all the same
@@ -263,6 +263,7 @@ def padStringList(l):
     Parameters
     ----------
     l : list of strings
+    pad: is it a "post" (after the string) pad, or a "pre" (before the string) pad?
     
     Returns
     -------
@@ -280,6 +281,7 @@ def padStringList(l):
     for s in l:
         if s.startswith("-"):
             negativeString =True
+            break # only need to see if one is negative
             
     
     if negativeString: #Prepend the string
@@ -293,14 +295,16 @@ def padStringList(l):
         if len(s) > maxLen:
             maxLen = len(s)
     
+    
     for i in range(len(l)):
-        l[i] = postPadString(l[i], maxLen)
+        l[i] = padString(l[i], maxLen, pad)
+
  
     return l
                 
         
         
-def postPadString(s, d):
+def padString(s, d, pad):
     """
     Add spaces to the end of a string until it is the length given by d
     If len is already more than d, it just returns s
@@ -309,19 +313,25 @@ def postPadString(s, d):
     ----------
     s : string you want to pad at the end with spaces
     d : Integer that you want the final string length to be
+    pad: is it a "post" (after the string) pad, or a "pre" (before the string) pad?
 
     Returns
     -------
-    s : String of length d. If len(s) < d originalyy, then s is returned unchanged.
+    s : String of length d. If len(s) < d originaly, then s is returned unchanged.
 
     """
     if s is None:
         return None
     
     while len(s) < d:
-        s += " "
+        if pad == "post":
+            s += " "
+        elif pad == "pre":
+            s = " " + s
+        else:
+            return s
     return s
-        
+  
     
 def cleanPhaseName(s):
     """
@@ -424,8 +434,8 @@ def getSpaceGroup(cif, data):
         A string denoting the space group of the phase, as given in the CIF.
      """
     spacegroup = getDictEntryCopy(cif[data], "_symmetry_space_group_name_H-M",
-                                             "_symmetry_Int_Tables_number",
                                              "_space_group_name_H-M_alt",
+                                             "_symmetry_Int_Tables_number",
                                              "_space_group_IT_number",
                                              default = "")
 
@@ -565,8 +575,8 @@ def getAtoms(cif, data):
     except KeyError:
         print("Warning! Atom types inferred from site labels. Please check for correctness.")
         atoms = []
-        for l in labels:
-            atoms += [isThisAnAtom(l)]
+        for label in labels:
+            atoms += [isThisAnAtom(label)]
     atoms = padStringList(atoms)
 
     #occupancy
@@ -614,9 +624,11 @@ def isThisAnAtom(s):
     Given a site label string, the first 2 or 1 characters are checked
     (case-sensitive) to see if they match an element symbols. If they do,
     this symbol is returned. If not, the entire site label is returned.
+    
+    If "W" is detected, then a warning is printed re tungsten or water.
 
     Args:
-        s: a string to denoting the site label
+        s: a string denoting the site label
 
     Returns:
         A string containing the element symbol, or the entire label.
@@ -631,8 +643,7 @@ def isThisAnAtom(s):
                 "Sb","Sc","Sm","Se","Si","Sn","Sr","Ta","Tb","Tc",\
                 "Te","Th","Tl","Ti","Tm", "W", "U", "V","Xe", "Y",\
                 "Yb","Zn","Zr","Np","Pu","Am","Cm","Bk","Cf", "D")
-
-
+   
 
     r = s[0:2] #take the first two characters
     if r in elements:
@@ -640,6 +651,8 @@ def isThisAnAtom(s):
 
     r = s[0:1] #take the first character
     if r in elements:
+        if r == "W":
+                print("W detected. Do you mean tungsten or oxygen from a water molecule? Please check.")
         return r
 
     return s #if everything fails, just return what the label was
@@ -676,10 +689,6 @@ def fixAtomSiteType(a):
     charge = regex.group(2)
     sign = regex.group(3)
     digit = regex.group(4) #if there is a trailing digit, then that is probably the charge
-
-
-    if symbol == "W":
-        print("W detected. Do you mean tungsten or oxygen from a water molecule?")
 
 
     if charge == "0": #ie Si0+ is a valid symbol, but it is a neutral atom
