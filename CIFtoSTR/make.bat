@@ -8,6 +8,12 @@ REM Set up the current working directory files
 del %filename%.pyz
 
 
+REM clean up from previous make
+rmdir /Q /S build
+rmdir /Q /S dist
+rmdir /Q /S __pycache__
+
+
 REM get the current date and time for the version number
 for /f %%i in ('date /t') do set mydate=%%i
 for /f %%i in ('time /t') do set mytime=%%i
@@ -35,9 +41,6 @@ copy %filename%.exe %git%
 copy %filename%.exe %dest%
 copy %filename%.exe ..
 cd ..
-rmdir /Q /S build
-rmdir /Q /S dist
-rmdir /Q /S __pycache__
 del %filename%.spec
 
 
