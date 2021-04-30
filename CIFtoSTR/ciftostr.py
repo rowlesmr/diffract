@@ -15,7 +15,7 @@ import CifFile as cf
 
 #ciffile = "testcifs\\internet01.cif"
 #cif = cf.ReadCif(ciffile)
-#data = cif.keys()[-1]
+#data = cif.keys()[0]
 
 
 def write_str(cif_file, str_file = None, data = "all"):
@@ -77,7 +77,7 @@ def create_str(cif, data):
     s += "\tscale @ 0.0001\n"
     s += get_unitcell(cif, data) + "\n"
     s += '\tspace_group "' + get_spacegroup(cif, data) + '"\n'
-    s += get_atoms(cif, data)
+    s += get_atom_sites_string(cif, data)
 
     return s
 
@@ -161,10 +161,10 @@ def val_to_frac(s):
         A list of strings, or a single string, with fractions representing 1/6, 1/3, 2/3, or 5/6
     """
     ONE_SIXTH = ("0.1666","0.16666","0.166666","0.1666666",\
-                "0.1667","0.16667","0.166667","0.1666667")
+                 "0.1667","0.16667","0.166667","0.1666667")
     ONE_THIRD = ("0.3333","0.33333","0.333333","0.3333333")
     TWO_THIRD = ("0.6666","0.66666","0.666666","0.6666666",\
-                "0.6667","0.66667","0.666667","0.6666667")
+                 "0.6667","0.66667","0.666667","0.6666667")
     FIVE_SIXTH= ("0.8333","0.83333","0.833333","0.8333333")
 
     ONE_SIXTH_FRAC = "=1/6;"
@@ -308,32 +308,6 @@ def pad_string(s, d, pad):
         else:
             return s
     return s
-
-
-def lmap(func, l):
-    """
-    A shortcut method for returning a list from mapping a
-    function over a single list.
-    I check if i is a list, and then map the function over it.
-    If l is not a list, I pass it to the function as a func(l).
-
-    Parameters
-    ----------
-    func : the function you want to map over a list
-    l : a list you want to map a function over.
-        If l is not a list (eg string), then it
-        is passed to the function whole, ie func(l)
-
-    Returns
-    -------
-    A list, if l is a list. or whatevert the output of func is
-    if l is not a list
-
-    """
-    if type(l) is list:
-        return list(map(func,l))
-    else:
-        return func(l)
 
 
 def count_nones(l):
@@ -482,12 +456,12 @@ def get_unitcell(cif, data):
     Raises:
         KeyError: if any of the unit cell parameters are not present in the datablock.
     """
-    a_s  = lmap(strip_brackets, cif[data]["_cell_length_a"])
-    b_s  = lmap(strip_brackets, cif[data]["_cell_length_b"])
-    c_s  = lmap(strip_brackets, cif[data]["_cell_length_c"])
-    al_s = lmap(strip_brackets, cif[data]["_cell_angle_alpha"])
-    be_s = lmap(strip_brackets, cif[data]["_cell_angle_beta"])
-    ga_s = lmap(strip_brackets, cif[data]["_cell_angle_gamma"])
+    a_s  = strip_brackets(cif[data]["_cell_length_a"][:])
+    b_s  = strip_brackets(cif[data]["_cell_length_b"][:])
+    c_s  = strip_brackets(cif[data]["_cell_length_c"][:])
+    al_s = strip_brackets(cif[data]["_cell_angle_alpha"][:])
+    be_s = strip_brackets(cif[data]["_cell_angle_beta"][:])
+    ga_s = strip_brackets(cif[data]["_cell_angle_gamma"][:])
 
     a  = float(a_s)
     b  = float(b_s)
@@ -542,17 +516,17 @@ def get_unitcell2(cif, data):
     Raises:
         KeyError: if any of the unit cell parameters are not present in the datablock.
     """
-    a  = lmap(strip_brackets, cif[data]["_cell_length_a"])
-    b  = lmap(strip_brackets, cif[data]["_cell_length_b"])
-    c  = lmap(strip_brackets, cif[data]["_cell_length_c"])
-    al = lmap(strip_brackets, cif[data]["_cell_angle_alpha"])
-    be = lmap(strip_brackets, cif[data]["_cell_angle_beta"])
-    ga = lmap(strip_brackets, cif[data]["_cell_angle_gamma"])
+    a  = strip_brackets(cif[data]["_cell_length_a"][:])
+    b  = strip_brackets(cif[data]["_cell_length_b"][:])
+    c  = strip_brackets(cif[data]["_cell_length_c"][:])
+    al = strip_brackets(cif[data]["_cell_angle_alpha"][:])
+    be = strip_brackets(cif[data]["_cell_angle_beta"][:])
+    ga = strip_brackets(cif[data]["_cell_angle_gamma"][:])
 
     return concat("\ta",a,"b",b,"c",c,"\n\tal",al,"be",be,"ga",ga, sep=" ")
 
 
-def get_atoms(cif, data):
+def get_atom_sites_string(cif, data):
     """
     Returns a string giving the site parameters for all of the sites in the CIF.
 
@@ -586,9 +560,9 @@ def get_atoms(cif, data):
     labels = pad_string_list(get_dict_entry_copy_throw_error(cif[data],"_atom_site_label"))
 
     # to val_to_frac first, as a real match wouldn't have any errors to strip
-    x = pad_string_list(lmap(strip_brackets, lmap(val_to_frac, cif[data]["_atom_site_fract_x"])))
-    y = pad_string_list(lmap(strip_brackets, lmap(val_to_frac, cif[data]["_atom_site_fract_x"])))
-    z = pad_string_list(lmap(strip_brackets, lmap(val_to_frac, cif[data]["_atom_site_fract_x"])))
+    x = pad_string_list([strip_brackets(val_to_frac(i)) for i in cif[data]["_atom_site_fract_x"]])
+    y = pad_string_list([strip_brackets(val_to_frac(i)) for i in cif[data]["_atom_site_fract_y"]])
+    z = pad_string_list([strip_brackets(val_to_frac(i)) for i in cif[data]["_atom_site_fract_z"]])
 
     #type of atom
     try:
@@ -603,7 +577,7 @@ def get_atoms(cif, data):
 
     #occupancy
     try:
-        occ = lmap(strip_brackets, cif[data]["_atom_site_occupancy"])
+        occ = [strip_brackets(i) for i in cif[data]["_atom_site_occupancy"]]
     except KeyError:
         occ = ["1"] * len(labels)
     occ = pad_string_list(occ)
@@ -613,17 +587,17 @@ def get_atoms(cif, data):
 
     r = ""
     for i in range(len(labels)):
-        r += make_site_string(labels[i],x[i],y[i],z[i],atoms[i],occ[i],b_iso[i])
+        r += make_atom_site_string(labels[i],x[i],y[i],z[i],atoms[i],occ[i],b_iso[i])
 
     return r
 
 
-def make_site_string(label, x, y, z, atom, occ, beq):
+def make_atom_site_string(label, x, y, z, atom, occ, beq):
     """
     Returns a string giving the site parameters necessary for TOPAS:
         "site _1_ num_posns 0 x _2_ y _3_ z _4_ occ _5_ _6_ beq _7_"
 
-    This is used by get_atoms().
+    This is used by get_atom_site_string().
 
     Args:
         label: a string to describe the site (1)
@@ -844,7 +818,7 @@ def get_b_iso(cif, data):
     Raises:
         KeyError: if the key "_atom_site_B_iso_or_equiv" is not present.
     """
-    b_iso = lmap(change_NA_value, lmap(strip_brackets, cif[data]["_atom_site_B_iso_or_equiv"]))
+    b_iso = [change_NA_value(strip_brackets(i)) for i in cif[data]["_atom_site_B_iso_or_equiv"]]
 
     num = count_nones(b_iso)
 
@@ -893,9 +867,7 @@ def get_u_iso(cif, data):
     Raises:
         KeyError: if the key "_atom_site_U_iso_or_equiv" is not present.
     """
-    u_iso = lmap(change_NA_value, lmap(strip_brackets, cif[data]["_atom_site_U_iso_or_equiv"]))
-
-    b_iso = [convert_u_to_b(i) for i in u_iso] ##https://stackoverflow.com/a/1614247/36061 convert string list to float list
+    b_iso = [convert_u_to_b(change_NA_value(strip_brackets(i))) for i in cif[data]["_atom_site_U_iso_or_equiv"]]
 
     num = count_nones(b_iso)
 
@@ -939,7 +911,7 @@ def convert_aniso_to_iso(cif,data):
 
     #do comparison with atom_labels to make sure
     # every atom has a Bequiv
-    if labels_aniso == labels: #everything is there
+    if labels_aniso == labels: #everything is there and in the same order
         return b_equiv
 
     #if we get to here, labelsAniso != labels, and we need to figure
@@ -984,9 +956,9 @@ def get_b_aniso(cif,data):
         KeyError: if any of the keys "_atom_site_aniso_B_11", "_22", or "_33" is not present.
     """
     #convert the str lists to float lists
-    B11 = [float(i) for i in lmap(strip_brackets, cif[data]["_atom_site_aniso_B_11"])]
-    B22 = [float(i) for i in lmap(strip_brackets, cif[data]["_atom_site_aniso_B_22"])]
-    B33 = [float(i) for i in lmap(strip_brackets, cif[data]["_atom_site_aniso_B_33"])]
+    B11 = [float(strip_brackets(i)) for i in cif[data]["_atom_site_aniso_B_11"]]
+    B22 = [float(strip_brackets(i)) for i in cif[data]["_atom_site_aniso_B_22"]]
+    B33 = [float(strip_brackets(i)) for i in cif[data]["_atom_site_aniso_B_33"]]
 
     b_equiv = [(B11[i] + B22[i] + B33[i])/3.0 for i in range(len(B11))] #get the average of the three values
 
@@ -1012,9 +984,9 @@ def get_u_aniso(cif,data):
         KeyError: if any the keys "_atom_site_aniso_U_11", "_22", or "_33" is not present.
     """
     #convert the str lists to float lists
-    U11 = [float(i) for i in lmap(strip_brackets, cif[data]["_atom_site_aniso_U_11"])]
-    U22 = [float(i) for i in lmap(strip_brackets, cif[data]["_atom_site_aniso_U_11"])]
-    U33 = [float(i) for i in lmap(strip_brackets, cif[data]["_atom_site_aniso_U_11"])]
+    U11 = [float(strip_brackets(i)) for i in cif[data]["_atom_site_aniso_U_11"]]
+    U22 = [float(strip_brackets(i)) for i in cif[data]["_atom_site_aniso_U_22"]]
+    U33 = [float(strip_brackets(i)) for i in cif[data]["_atom_site_aniso_U_33"]]
 
     #get the average of the three values
     b_equiv = [convert_u_to_b(str((U11[i] + U22[i] + U33[i])/3.0)) for i in range(len(U11))]
