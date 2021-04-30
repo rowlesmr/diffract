@@ -12,7 +12,6 @@ import ciftostr
 import citationdate
 
 
-
 CITATION = "\nMatthew R. Rowles, CIFtoSTR, https://github.com/rowlesmr/diffract/tree/main/CIFtoSTR, "+\
            "version date: " + citationdate.datetime + "\n"
 
@@ -32,8 +31,6 @@ HELP = \
 \
 "For citation: "+ CITATION + \
 "------------------------\n"
-
-
 
 
 INFO = \
@@ -103,7 +100,6 @@ INFO = \
 "\n------------------------\n"
 
 
-
 def gui():
     """
     Defines the GUI elements.
@@ -139,14 +135,12 @@ def gui():
         filenames = values['_FILES_'].split(';') # list of filenames
         if event in (sg.WIN_CLOSED, 'Exit'):
             break
-        elif event == 'Convert':          
-            convertCifs(filenames) #this does the actual CIF to STR conversion
+        elif event == 'Convert':
+            convert_cifs_to_strs(filenames) #this does the actual CIF to STR conversion
         elif event == 'Info':
             print(INFO)
 
     window.close()
-
-
 
 
 def main():
@@ -157,7 +151,7 @@ def main():
     -------
     None.
 
-   
+
     """
     if len(sys.argv) <= 1: #Assume the user wants the gui
         print(HELP) #just in case there are commandline people wanting to know.
@@ -172,12 +166,10 @@ def main():
     for i in range(1,len(sys.argv)):
         filenames += glob(sys.argv[i])
 
-    convertCifs(filenames) #this does the actual CIF to STR conversion
+    convert_cifs_to_strs(filenames) #this does the actual CIF to STR conversion
 
 
-
-
-def convertCifs(filenames):
+def convert_cifs_to_strs(filenames):
     """
     Helper function to keep the creation of STRs consistent between the commandline and GUI versions
 
@@ -188,17 +180,14 @@ def convertCifs(filenames):
     """
     for file in filenames:
         try:
-            ciftostr.writeSTR(file)
+            ciftostr.write_str(file)
             print("--------------------")
         except Exception as e: #just print the exception and keep going
             print(e)
     print("All done.")
 
 
-
 main()
-
-
 
 
 print("Thanks for using CIFtoSTR. If you liked this, please cite " + CITATION)
