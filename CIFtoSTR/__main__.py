@@ -12,6 +12,7 @@ import ciftostr
 import citationdate
 
 
+
 CITATION = "\nMatthew R. Rowles, CIFtoSTR, https://github.com/rowlesmr/diffract/tree/main/CIFtoSTR, "+\
            "version date: " + citationdate.datetime + "\n"
 
@@ -196,5 +197,8 @@ def convertCifs(filenames):
 
 
 main()
+
+
+
 
 print("Thanks for using CIFtoSTR. If you liked this, please cite " + CITATION)

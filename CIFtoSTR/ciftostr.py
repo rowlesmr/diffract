@@ -12,41 +12,58 @@ import copy
 #https://pypi.org/project/PyCifRW/4.4/  https://bitbucket.org/jamesrhester/pycifrw/downloads/
 import CifFile as cf
 
-#cif = cf.ReadCif("testcifs\\9015613.cif")
-#data = cif.keys()[0]
+
+#ciffile = "testcifs\\internet01.cif"
+#cif = cf.ReadCif(ciffile)
+#data = cif.keys()[-1]
 
 
 
-def writeSTR(ciffile):
+def write_str(cif_file, str_file = None, data = "all"):
     """
-    Writes all structures in a given CIF to file from a give cif file..
+    Writes all structures in a given CIF to one file each from a given cif file..
 
     Args:
-        ciffile: path to a CIF file as a string
+        cif_file: path to a CIF file as a string
+        str_file: give an explicit name for the resultant STR (excluding path)
+        data : do you want 'all', the 'first', or the 'last' data blocks in the cif?
     Returns:
         None. Writes file to disk.
      """
-    print("Reading " + ciffile + ".")
-    cif = cf.ReadCif(ciffile)
-    datakeys = cif.keys()
+    print("Reading " + cif_file + ".")
+    cif = cf.ReadCif(cif_file)
 
-    path = os.path.dirname(ciffile)
+    if data == "first":
+        data_keys = [cif.keys()[0]]
+    elif data == "last":
+        data_keys = [cif.keys()[-1]]
+    else:
+        data_keys = cif.keys()
 
-    for data in datakeys:
-        s = createSTR(cif, data)
-        f = os.path.join(path, cleanFileName(getPhaseName(cif, data)) + '.str')
+    path = os.path.dirname(cif_file)
 
-        str_file = open(f, "w")
-        print("Now writing " + str_file.name + ".")
-        str_file.write(s)
-        str_file.close()
+    #do I need to update the filename on each loop through the datakeys?
+    get_new_filename = str_file is None
+        
+    for d in data_keys:
+        s = createSTR(cif, d)
+
+        if get_new_filename:
+            str_file = cleanFileName(getPhaseName(cif, d)) + ".str"
+
+        f = os.path.join(path, str_file)
+
+        file_to_write = open(f, "w")
+        print("Now writing " + file_to_write.name + ".")
+        file_to_write.write(s)
+        file_to_write.close()
 
     print("Done.")
 
 
 def createSTR(cif, data):
     """
-    Creates a single string formatted as a STR representing the give data block in the cif.
+    Creates a single string formatted as an STR representing the given data block in the cif.
 
     Args:
         cif: PyCifRW representation of a cif file
@@ -66,72 +83,50 @@ def createSTR(cif, data):
     return s
 
 
-def stripBrackets(l):
+def stripBrackets(s):
     """
     Strips the brackets at the end of a string.
     The main use case is to remove the error values, eg '0.123(45)' --> '0.123'.
+    None is returned as None
 
     Args:
-        l: A list of strings, or a single string.
+        s: A single string.
     Returns:
-        A list of strings, or a single string, with no brackets at the end of each string
+        A string, with no brackets at the end of each string
      """
-     
-    if l is None:
+
+    if s is None:
         return None
 
-    l = l[:] # get a copy 
-    changeMe = False
-    if isinstance(l, str): #if it's a single string, make it a list
-        l = [l]
-        changeMe = True
 
-    for i in range(len(l)):
-        s = l[i]
+    try:
+        bracket = s.index("(")
+    except ValueError: #if there isn't a bracket, just keep going.
+        bracket = len(s)
 
-        try:
-            bracket = s.index("(")
-        except ValueError: #if there isn't a bracket, just keep going.
-            bracket = len(s)
+    s=s[0:bracket]
 
-        l[i]=s[0:bracket]
-
-    if changeMe: #if it was a list, change it back
-        l = l[0]
-
-    return l
+    return s
 
 
-def changeNAValue(l):
+def changeNAValue(s):
     """
     If a string consists of a single question mark ('?') or full stop ('.'),
     it is replaced with a None
     These are normally markers of "no value recorded"
 
+    None is returned as None
+
     Args:
-        l: A list of strings, or a single string.
+        s: A string.
     Returns:
-        A list of strings, or a single string, with None in place of a single question
-        mark or full stop
+        A string, with None in place of a single question mark or full stop
      """
-    
-    if l is None:
-        return None
 
-    changeMe = False
-    l = l[:] # take a copy
-    if isinstance(l, str): #if it's a single string, make it a list
-        l = [l]
-        changeMe = True
+    if s in ("?", "."):
+        s = None
 
-    for i in range(len(l)):
-        if l[i] in ("?", "."):
-            l[i] = None
-
-    if changeMe: #if t was a list, change it back
-        l = l[0]
-
-    return l
+    return s
 
 
 def concat(*ss, sep="_"):
@@ -151,8 +146,7 @@ def concat(*ss, sep="_"):
     return r
 
 
-
-def valToFrac(l):
+def valToFrac(s):
     """
     Checks a list (or single) strings consisting of numeric values for
     values which are consistent with fractional values.
@@ -162,6 +156,8 @@ def valToFrac(l):
 
     TOPAS requires atoms on special positions with values that have non-terminating
     decimal representations to have be represented as fractions.
+
+    None is returned as None
 
     Args:
         l: A list of strings, or a single string represent numerical values.
@@ -180,41 +176,30 @@ def valToFrac(l):
     twoThirdFrac = "=2/3;"
     fiveSixthFrac= "=5/6;"
 
-    if l is None:
+    if s is None:
         return None
 
-    l = l[:] #get a copy
     fractionDetected = False
-    changeMe = False
-    if isinstance(l, str): #if it's a single string, make it a list
-        l = [l]
-        changeMe = True
 
-    for i in range(len(l)):
-        fractionDetected = False
-        if l[i] in oneSixth:
-            fractionDetected = True
-            l[i] = oneSixthFrac
-        elif l[i] in oneThird:
-            fractionDetected = True
-            l[i] = oneThirdFrac
-        elif l[i] in twoThird:
-            fractionDetected = True
-            l[i] = twoThirdFrac
-        elif l[i] in fiveSixth:
-            fractionDetected = True
-            l[i] = fiveSixthFrac
-        else:
-            pass #l[i] is all good
+    if s in oneSixth:
+        fractionDetected = True
+        s = oneSixthFrac
+    elif s in oneThird:
+        fractionDetected = True
+        s = oneThirdFrac
+    elif s in twoThird:
+        fractionDetected = True
+        s = twoThirdFrac
+    elif s in fiveSixth:
+        fractionDetected = True
+        s = fiveSixthFrac
+    else:
+        pass #s is all good
 
+    if fractionDetected:
+        print("Fractional atomic coordinate detected and replaced.")
 
-        if fractionDetected:
-            print("Fractional atomic coordinate detected and replaced.")
-
-    if changeMe: #if it was a list, change it back
-        l = l[0]
-
-    return l
+    return s
 
 
 def getDictEntryCopy(dct, *keys, default=None):
@@ -248,70 +233,69 @@ def getDictEntryCopyThrowError(dct, key):
         key: an keys.
     Returns:
         A deepcopy of the dictionary value associated with the key.
-    
+
     Raises:
         KeyError if the key is not present
      """
     return copy.deepcopy(dct[key])
-    
+
 
 def padStringList(l, pad="post"):
     """
-    Given a list of atomic ordinates, labels, or the like, pad the length of the strings 
+    Given a list of atomic ordinates, labels, or the like, pad the length of the strings
     such that they are all the same
 
     Parameters
     ----------
     l : list of strings
     pad: is it a "post" (after the string) pad, or a "pre" (before the string) pad?
-    
+
     Returns
     -------
     List of strings, all of the same length
 
     """
-    # if any strings start with '-', it's probably a negative number, and I need to prepend 
+    # if any strings start with '-', it's probably a negative number, and I need to prepend
     #  a space to those that don't start with a '-'.
     negativeString = False
-    
+
     if l is None:
         return None
-    
+
     l=l[:] #don't alter the original
     for s in l:
         if s.startswith("-"):
             negativeString =True
             break # only need to see if one is negative
-            
-    
-    if negativeString: #Prepend the string
+
+
+    if negativeString: #Prepend the string if it looks like a negative number
         for i in range(len(l)):
             if not l[i].startswith("-"):
                 l[i] = " "+l[i]
-                
+
     #what is the max str len?
-    maxLen = 0          
+    maxLen = 0
     for s in l:
         if len(s) > maxLen:
             maxLen = len(s)
-    
-    
+
+
     for i in range(len(l)):
         l[i] = padString(l[i], maxLen, pad)
 
- 
+
     return l
-                
-        
-        
+
+
 def padString(s, d, pad):
     """
-    Add spaces to the end of a string until it is the length given by d
+    Add spaces to the end or start  of a string until it is the length given by d
     If len is already more than d, it just returns s
 
     Parameters
     ----------
-    s : string you want to pad at the end with spaces
+    s : string you want to pad at the end or start with spaces
     d : Integer that you want the final string length to be
     pad: is it a "post" (after the string) pad, or a "pre" (before the string) pad?
 
@@ -322,7 +306,7 @@ def padString(s, d, pad):
     """
     if s is None:
         return None
-    
+
     while len(s) < d:
         if pad == "post":
             s += " "
@@ -331,11 +315,59 @@ def padString(s, d, pad):
         else:
             return s
     return s
-  
-    
+
+
+def lmap(func, l):
+    """
+    A shortcut method for returning a list from mapping a
+    function over a single list.
+    I check if i is a list, and then map the function over it.
+    If l is not a list, I pass it to the function as a func(l).
+
+    Parameters
+    ----------
+    func : the function you want to map over a list
+    l : a list you want to map a function over.
+        If l is not a list (eg string), then it
+        is passed to the function whole, ie func(l)
+
+    Returns
+    -------
+    A list, if l is a list. or whatevert the output of func is
+    if l is not a list
+
+    """
+
+    if type(l) is list:
+        return list(map(func,l))
+    else:
+        return func(l)
+
+
+def countNones(l):
+    """
+    Counts the number of Nones in an iterable (eg list)
+
+    Parameters
+    ----------
+    l : an iterable
+
+    Returns
+    -------
+    num : integer with the number of Nones is the iterable
+
+    """
+    num = 0
+    for s in l:
+        if s is None:
+            num += 1
+    return num
+
+
+
 def cleanPhaseName(s):
     """
-    Removes new lines, carriage returns, and leading/trailing whitespace from a 
+    Removes new lines, carriage returns, and leading/trailing whitespace from a
     string representing a phase name
 
     Args:
@@ -349,19 +381,20 @@ def cleanPhaseName(s):
 
 def cleanFileName(s):
     """
-    Replaces illegal characters from a string which is to be used as a filename. 
+    Replaces illegal characters from a string which is to be used as a filename.
     This doesn't deal with the path, just the name. Also, not the extension.
-    
-    eg 'string' could be used to construct 'C:\important\string.cif' at a later point in the program.
-    
+
+    eg 'string' could be used to construct 'C:\important\string.cif' at a later
+    point in the program.
+
     / \ | : * ? " < >  are replaced by "_"
-    
+
     Whitespace is also replaced by "_"
-    
+
     Also checks for illegal names like 'CON', and 'PRN'.
-    
-    Yes, the is Windows-centric, but so is TOPAS.
-    
+
+    Yes, this is Windows-centric, but so is TOPAS.
+
     Trying to follow guidelines in:
     https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions
 
@@ -370,20 +403,18 @@ def cleanFileName(s):
 
     Returns:
         A string with no illegal characters
-     """    
-    illegalNames = ( "CON",  "PRN",  "AUX",  "NUL", "COM1", "COM2", "COM3", "COM4", 
-                    "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", 
-                    "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",    ".",   "..")     
+     """
+    illegalNames = ( "CON",  "PRN",  "AUX",  "NUL", "COM1", "COM2", "COM3", "COM4",
+                    "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3",
+                    "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",    ".",   "..")
 
     if s.upper() in illegalNames:
         s = s + "_"
-        
+
     if s.endswith("."):
-        s[:-1] + "_"
+        s = s[:-1] + "_"
 
     return re.sub("[\\\\/:*?\"<>|\s]", "_", s)
-
-
 
 
 def getPhaseName(cif, data):
@@ -416,6 +447,7 @@ def getPhaseName(cif, data):
         r = concat(phasename, data)
 
     return r
+
 
 def getSpaceGroup(cif, data):
     """
@@ -460,12 +492,12 @@ def getUnitCell(cif, data):
         KeyError: if any of the unit cell parameters are not present in the datablock.
     """
 
-    a_s  = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_length_a"))
-    b_s  = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_length_b"))
-    c_s  = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_length_c"))
-    al_s = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_angle_alpha"))
-    be_s = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_angle_beta"))
-    ga_s = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_angle_gamma"))
+    a_s  = lmap(stripBrackets, cif[data]["_cell_length_a"])
+    b_s  = lmap(stripBrackets, cif[data]["_cell_length_b"])
+    c_s  = lmap(stripBrackets, cif[data]["_cell_length_c"])
+    al_s = lmap(stripBrackets, cif[data]["_cell_angle_alpha"])
+    be_s = lmap(stripBrackets, cif[data]["_cell_angle_beta"])
+    ga_s = lmap(stripBrackets, cif[data]["_cell_angle_gamma"])
 
     a  = float(a_s)
     b  = float(b_s)
@@ -519,12 +551,12 @@ def getUnitCell2(cif, data):
     Raises:
         KeyError: if any of the unit cell parameters are not present in the datablock.
     """
-    a  = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_length_a"))
-    b  = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_length_b"))
-    c  = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_length_c"))
-    al = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_angle_alpha"))
-    be = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_angle_beta"))
-    ga = stripBrackets(getDictEntryCopyThrowError(cif[data],"_cell_angle_gamma"))
+    a  = lmap(stripBrackets, cif[data]["_cell_length_a"])
+    b  = lmap(stripBrackets, cif[data]["_cell_length_b"])
+    c  = lmap(stripBrackets, cif[data]["_cell_length_c"])
+    al = lmap(stripBrackets, cif[data]["_cell_angle_alpha"])
+    be = lmap(stripBrackets, cif[data]["_cell_angle_beta"])
+    ga = lmap(stripBrackets, cif[data]["_cell_angle_gamma"])
 
     return concat("\ta",a,"b",b,"c",c,"\n\tal",al,"be",be,"ga",ga, sep=" ")
 
@@ -561,17 +593,23 @@ def getAtoms(cif, data):
         KeyError: if any of the site label or fractional coordinate keys are not present.
     """
     labels = padStringList(getDictEntryCopyThrowError(cif[data],"_atom_site_label"))
-    
+
     # to valToFrac first, as a real match wouldn't have any errors to strip
-    x = padStringList(stripBrackets(valToFrac(getDictEntryCopyThrowError(cif[data],"_atom_site_fract_x"))))
-    y = padStringList(stripBrackets(valToFrac(getDictEntryCopyThrowError(cif[data],"_atom_site_fract_y"))))
-    z = padStringList(stripBrackets(valToFrac(getDictEntryCopyThrowError(cif[data],"_atom_site_fract_z"))))
+    #x = padStringList(stripBrackets(valToFrac(getDictEntryCopyThrowError(cif[data],"_atom_site_fract_x"))))
+    #y = padStringList(stripBrackets(valToFrac(getDictEntryCopyThrowError(cif[data],"_atom_site_fract_y"))))
+    #z = padStringList(stripBrackets(valToFrac(getDictEntryCopyThrowError(cif[data],"_atom_site_fract_z"))))
+
+
+    x = padStringList(lmap(stripBrackets, lmap(valToFrac, cif[data]["_atom_site_fract_x"])))
+    y = padStringList(lmap(stripBrackets, lmap(valToFrac, cif[data]["_atom_site_fract_x"])))
+    z = padStringList(lmap(stripBrackets, lmap(valToFrac, cif[data]["_atom_site_fract_x"])))
+
+
 
     #type of atom
     try:
         atoms = getDictEntryCopyThrowError(cif[data],"_atom_site_type_symbol")
         atoms = [fixAtomSiteType(i) for i in atoms]
-
     except KeyError:
         print("Warning! Atom types inferred from site labels. Please check for correctness.")
         atoms = []
@@ -581,7 +619,7 @@ def getAtoms(cif, data):
 
     #occupancy
     try:
-        occ = stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_occupancy"))
+        occ = lmap(stripBrackets, cif[data]["_atom_site_occupancy"])
     except KeyError:
         occ = ["1"] * len(labels)
     occ = padStringList(occ)
@@ -624,7 +662,7 @@ def isThisAnAtom(s):
     Given a site label string, the first 2 or 1 characters are checked
     (case-sensitive) to see if they match an element symbols. If they do,
     this symbol is returned. If not, the entire site label is returned.
-    
+
     If "W" is detected, then a warning is printed re tungsten or water.
 
     Args:
@@ -643,7 +681,7 @@ def isThisAnAtom(s):
                 "Sb","Sc","Sm","Se","Si","Sn","Sr","Ta","Tb","Tc",\
                 "Te","Th","Tl","Ti","Tm", "W", "U", "V","Xe", "Y",\
                 "Yb","Zn","Zr","Np","Pu","Am","Cm","Bk","Cf", "D")
-   
+
 
     r = s[0:2] #take the first two characters
     if r in elements:
@@ -652,7 +690,7 @@ def isThisAnAtom(s):
     r = s[0:1] #take the first character
     if r in elements:
         if r == "W":
-                print("W detected. Do you mean tungsten or oxygen from a water molecule? Please check.")
+            print("W detected. Do you mean tungsten or oxygen from a water molecule? Please check.")
         return r
 
     return s #if everything fails, just return what the label was
@@ -755,8 +793,6 @@ def allowedAtomTypes(a):
     return symbol
 
 
-
-
 def getBeq(cif, data):
     """
     Returns a list of strings giving the isotropic atomic displacement parameters, B, of
@@ -764,7 +800,7 @@ def getBeq(cif, data):
 
     They values are taken from "_atom_site_aniso_U_11", "_22", "_33" or
     "_atom_site_aniso_B_11", "_22", "_33", or "_atom_site_U_iso_or_equiv", or
-    "_atom_site_B_iso_or_equiv".
+    "_atom_site_B_iso_or_equiv". (in that order)
 
     If no values are present, then a value of "1" is assigned.
 
@@ -831,8 +867,16 @@ def getBiso(cif, data):
     Raises:
         KeyError: if the key "_atom_site_B_iso_or_equiv" is not present.
     """
-    return changeNAValue(stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_B_iso_or_equiv")))
 
+    Biso = lmap(changeNAValue, lmap(stripBrackets, cif[data]["_atom_site_B_iso_or_equiv"]))
+
+    num = countNones(Biso)
+
+    if num > 0:
+        print(str(num) + " missing Biso values.")
+
+
+    return Biso
 
 
 def convertUToB(s):
@@ -851,15 +895,11 @@ def convertUToB(s):
     """
     if s is None:
         return None
-    
+
     s = float(s)
     s = 8*math.pi**2*s
     s = str(round(float(s), 3)) # round B value to 3 d.p.
     return s
-    
-
-
-
 
 
 def getUiso(cif, data):
@@ -878,10 +918,14 @@ def getUiso(cif, data):
     Raises:
         KeyError: if the key "_atom_site_U_iso_or_equiv" is not present.
     """
-    Uiso = changeNAValue(stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_U_iso_or_equiv")))
+    Uiso = lmap(changeNAValue, lmap(stripBrackets, cif[data]["_atom_site_U_iso_or_equiv"]))
 
     Biso = [convertUToB(i) for i in Uiso] ##https://stackoverflow.com/a/1614247/36061 convert string list to float list
 
+    num = countNones(Biso)
+
+    if num > 0:
+        print(str(num) + " missing Uiso values.")
 
     return Biso
 
@@ -914,15 +958,17 @@ def getAnisoAsIso(cif,data):
     #if we get to here, then there should be some sort of anisotropic values
     try:
         Bequiv = getBaniso(cif,data) #if it isn't Baniso,
+        print(str(len(Bequiv)) + " Biso values calculated from anisotropic B values.")
     except KeyError:
         Bequiv = getUaniso(cif,data) #then it should be Uaniso
+        print(str(len(Bequiv)) + " Biso values calculated from anisotropic U values.")
 
     #do comparison with atom_labels to make sure
     # every atom has a Bequiv
     if labelsAniso == labels: #everything is there
         return Bequiv
 
-    #if we get to here, labelsAniso != labels, and we need to figure 
+    #if we get to here, labelsAniso != labels, and we need to figure
     #  out which atoms are missing, and if they have B or Uiso value
     try:
         Biso = getBiso(cif, data)
@@ -937,16 +983,16 @@ def getAnisoAsIso(cif,data):
     #need to build a list of Biso values to return
     r = [None] * len(labels)
     for i in range(len(labels)): # iterate over all of the atom labels
-        atom_label = labels[i] 
+        atom_label = labels[i]
         try:
-            aniso_index = labelsAniso.index(atom_label) #if the atom label matches aniso label, 
+            aniso_index = labelsAniso.index(atom_label) #if the atom label matches aniso label,
             r[i] = Bequiv[aniso_index] #  then copy that value into the returning list
+            #print("Biso value calculated from anisotropic values.")
         except ValueError:
             r[i] = Biso[i] #if the label doesn't match, then copy the result from the Biso list
-
+            #print("Biso value taken from given isotropic values.")
 
     return r
-
 
 
 def getBaniso(cif,data):
@@ -966,14 +1012,13 @@ def getBaniso(cif,data):
     """
 
     #convert the str lists to float lists
-    B11 = [float(i) for i in stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_aniso_B_11"))]
-    B22 = [float(i) for i in stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_aniso_B_22"))]
-    B33 = [float(i) for i in stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_aniso_B_33"))]
+    B11 = [float(i) for i in lmap(stripBrackets, cif[data]["_atom_site_aniso_B_11"])]
+    B22 = [float(i) for i in lmap(stripBrackets, cif[data]["_atom_site_aniso_B_22"])]
+    B33 = [float(i) for i in lmap(stripBrackets, cif[data]["_atom_site_aniso_B_33"])]
 
     Bequiv = [(B11[i] + B22[i] + B33[i])/3.0 for i in range(len(B11))] #get the average of the three values
 
     Bequiv = [str(round(float(i), 3)) for i in Bequiv] # round to 3 d.p.
-    
 
     return Bequiv
 
@@ -995,24 +1040,11 @@ def getUaniso(cif,data):
         KeyError: if any the keys "_atom_site_aniso_U_11", "_22", or "_33" is not present.
     """
     #convert the str lists to float lists
-    U11 = [float(i) for i in stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_aniso_U_11"))]
-    U22 = [float(i) for i in stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_aniso_U_22"))]
-    U33 = [float(i) for i in stripBrackets(getDictEntryCopyThrowError(cif[data],"_atom_site_aniso_U_33"))]
+    U11 = [float(i) for i in lmap(stripBrackets, cif[data]["_atom_site_aniso_U_11"])]
+    U22 = [float(i) for i in lmap(stripBrackets, cif[data]["_atom_site_aniso_U_11"])]
+    U33 = [float(i) for i in lmap(stripBrackets, cif[data]["_atom_site_aniso_U_11"])]
 
     #get the average of the three values
     Bequiv = [convertUToB(str((U11[i] + U22[i] + U33[i])/3.0)) for i in range(len(U11))]
 
     return Bequiv
-
-
-
-
-#cif = cf.ReadCif("albite_9002196.cif") #U_aniso
-#cif = cf.ReadCif("9326-ICSD_3.cif")     #B_iso
-#cif = cf.ReadCif("albite_9009663.cif")  #U_iso
-#cif = cf.ReadCif("example.cif")  #U_iso & U_aniso - not all atoms have aniso
-#cif = cf.ReadCif("Labradorits_1008757.cif") #B_aniso
-#cif = cf.ReadCif("quartz_1011172.cif") # z = 1/3
-#cif = cf.ReadCif("muscovite_9000837.cif")
-#cif = cf.ReadCif("7217727.cif")
-#data = cif.keys()[0]
