@@ -13,7 +13,7 @@ import copy
 import CifFile as cf
 
 
-#ciffile = "testcifs\\internet01.cif"
+#ciffile = "testcifs\\example.cif"
 #cif = cf.ReadCif(ciffile)
 #data = cif.keys()[0]
 
@@ -257,17 +257,14 @@ def pad_string_list(l, pad="post"):
     # if any strings start with '-', it's probably a negative number, and I need to prepend
     #  a space to those that don't start with a '-'.
     negative_string = False
-
-    l=l[:] #don't alter the original
+        
     for s in l:
         if s.startswith("-"):
             negative_string =True
             break # only need to see if one is negative
 
     if negative_string: #Prepend the string if it looks like a negative number
-        for i in range(len(l)):
-            if not l[i].startswith("-"):
-                l[i] = " "+l[i]
+        l = [" " + s if not s.startswith("-") else s for s in l]
 
     #what is the max str len?
     max_len = 0
@@ -275,8 +272,7 @@ def pad_string_list(l, pad="post"):
         if len(s) > max_len:
             max_len = len(s)
 
-    for i in range(len(l)):
-        l[i] = pad_string(l[i], max_len, pad)
+    l = [pad_string(s, max_len, "post") for s in l]
 
     return l
 
@@ -566,13 +562,10 @@ def get_atom_sites_string(cif, data):
 
     #type of atom
     try:
-        atoms = get_dict_entry_copy_throw_error(cif[data],"_atom_site_type_symbol")
-        atoms = [fix_atom_type(i) for i in atoms]
+        atoms = [fix_atom_type(i) for i in cif[data]["_atom_site_type_symbol"]]
     except KeyError:
         print("Warning! Atom types inferred from site labels. Please check for correctness.")
-        atoms = []
-        for label in labels:
-            atoms += [convert_site_label_to_atom(label)]
+        atoms = [convert_site_label_to_atom(label) for label in labels]
     atoms = pad_string_list(atoms)
 
     #occupancy
