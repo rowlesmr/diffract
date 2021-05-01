@@ -14,7 +14,7 @@ or you can type the individual names of CIFs to use after the pyz file.
 For information on exactly what the program does, click 'Info', or running
 >python ciftostr.pyz --info
 
-ciftostr.py, __main__.py, ciftostr.pyz, and ciftostr.exe are made available under the 
+ciftostr.py, __main__.py, ciftostr.pyz, ciftostr.exe, and cif1.exe are made available under the 
 GNU Lesser General Public License v3.0 or later.
 
 
