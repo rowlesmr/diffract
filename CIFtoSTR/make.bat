@@ -21,7 +21,7 @@ echo datetime = "%mydate% %mytime%h" > citationdate.py
 
 
 REM Make the python archive - zip lets you exclude locations
-zip %filename%.pyz *.* -r -x make.bat testcifs* __pycache__* build* cache* %filename%.exe
+zip %filename%.pyz *.* -r -x make.bat testcifs* __pycache__* build* cache* dist* *.exe %filename%.exe
 
 
 REM REM create the archive
@@ -31,13 +31,33 @@ REM copy %filename%.pyz %filename%\
 REM cd %filename%
 
 
-REM make the exe file and clean up
+
+REM make cif1
+pyinstaller  --onefile cif1.py
+
+del %dest%cif1.exe
+del %git%executables\cif1.exe
+del cif1.exe
+cd dist
+copy cif1.exe %git%executables\
+copy cif1.exe %dest%
+copy cif1.exe ..
+cd ..
+del cif1.spec
+
+rmdir /Q /S build
+rmdir /Q /S dist
+rmdir /Q /S __pycache__
+
+
+
+REM make the ciftostr exe file and clean up
 pyinstaller  --onefile __main__.py --name %filename%
 del %dest%%filename%.exe
-del %git%%filename%.exe
+del %git%executables\%filename%.exe
 del %filename%.exe
 cd dist
-copy %filename%.exe %git%
+copy %filename%.exe %git%executables\
 copy %filename%.exe %dest%
 copy %filename%.exe ..
 cd ..
@@ -58,8 +78,12 @@ copy %filename%.py %git%
 del %git%__main__.py
 copy __main__.py %git%
 
-del %git%%filename%.pyz
-copy %filename%.pyz %git%
+del %git%cif1.py
+copy cif1.py %git%
+
+
+del %git%executable\%filename%.pyz
+copy %filename%.pyz %git%exeutable\
 
 
 
