@@ -1,8 +1,16 @@
 # -*- coding: utf-8 -*-
 """
+
+SPDX-License-Identifier:  GNU Lesser General Public License v3.0 or later
+
+Copyright © 2021 Matthew Rowles
+
+
 Created on Mon Apr 19 17:10:25 2021
 
 @author: Matthew Rowles
+
+
 """
 
 import math
@@ -10,7 +18,7 @@ import re #regular expression
 import os #ntpath #to separate path and filename
 import copy
 #https://pypi.org/project/PyCifRW/4.4/  https://bitbucket.org/jamesrhester/pycifrw/downloads/
-import CifFile as cf
+import CifFile
 
 
 #ciffile = "testcifs\\example.cif"
@@ -30,7 +38,7 @@ def write_str(cif_file, str_file = None, data = "all"):
         None. Writes file to disk.
      """
     print("Reading " + cif_file + ".")
-    cif = cf.ReadCif(cif_file)
+    cif = CifFile.ReadCif(cif_file)
 
     if data == "first":
         data_keys = [cif.keys()[0]]
