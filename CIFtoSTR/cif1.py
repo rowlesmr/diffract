@@ -14,6 +14,7 @@ Created on Fri Apr 23 10:57:06 2021
 import sys #for command line arguments
 import ciftostr
 
+
 HELP = \
 """
 Command line arguments should be as follows:
@@ -71,6 +72,6 @@ def main():
         isTopas = True
     
     convert_cif_to_str(cif_to_read, str_to_write, isTopas) #this does the actual CIF to STR conversion
-
+    
 
 main()
