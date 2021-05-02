@@ -1051,9 +1051,7 @@ def licence():
     A string containing the licence text.
 
     """
-    print("in the function")
-    
-    if getattr(sys, 'frozen', False): #if it is an exe, this will be true.
+    if getattr(sys, 'frozen', False) or __loader__.__module__ == "zipimport": #if it is an exe, this will be true.
         return PYZ_EXE_LICENCE
     else:
         return PY_LICENCE
@@ -1113,7 +1111,7 @@ def main():
     None.
 
 
-    """
+    """    
     if len(sys.argv) <= 1: #Assume the user wants the gui
         print(HELP) #just in case there are commandline people wanting to know.
         gui()
