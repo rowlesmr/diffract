@@ -20,34 +20,35 @@ for /f %%i in ('time /t') do set mytime=%%i
 echo datetime = "%mydate% %mytime%h" > citationdate.py
 
 
+
+REM make cif1
+if "%~1"=="cif1" (
+    pyinstaller  --onefile cif1.py    
+    del %dest%cif1.exe
+    del %git%executables\cif1.exe
+    del cif1.exe
+    
+    cd dist
+    copy cif1.exe %git%executables\
+    copy cif1.exe %dest%
+    copy cif1.exe ..
+    cd ..
+
+    del cif1.spec
+
+    rmdir /Q /S build
+    rmdir /Q /S dist
+    rmdir /Q /S __pycache__
+
+    del %git%cif1.py
+    copy cif1.py %git%
+)
+
+
 REM Make the python archive - zip lets you exclude locations
 zip %filename%.pyz *.* -r -x make.bat testcifs* __pycache__* build* cache* dist* *.exe %filename%.exe
 
 
-REM REM create the archive
-REM cd ..
-REM python -m zipapp %filename% --compress
-REM copy %filename%.pyz %filename%\
-REM cd %filename%
-
-
-
-REM make cif1
-pyinstaller  --onefile cif1.py
-
-del %dest%cif1.exe
-del %git%executables\cif1.exe
-del cif1.exe
-cd dist
-copy cif1.exe %git%executables\
-copy cif1.exe %dest%
-copy cif1.exe ..
-cd ..
-del cif1.spec
-
-rmdir /Q /S build
-rmdir /Q /S dist
-rmdir /Q /S __pycache__
 
 
 
@@ -78,12 +79,12 @@ copy %filename%.py %git%
 del %git%__main__.py
 copy __main__.py %git%
 
-del %git%cif1.py
-copy cif1.py %git%
 
+del %git%citationdate.py
+copy citationdate.py %git%
 
-del %git%executable\%filename%.pyz
-copy %filename%.pyz %git%exeutable\
+del %git%executables\%filename%.pyz
+copy %filename%.pyz %git%executables\
 
 
 
