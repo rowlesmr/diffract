@@ -3,7 +3,7 @@
 
 ## Introduction
 
-This program converts an arbitrary number of CIF (Crystallographic Information Format) files, each containing an arbitrary number of structures, into a number of individual STR files that are compatible with the Rietveld analysis softwar, TOPAS. 
+This program converts an arbitrary number of CIF (Crystallographic Information Format) files, each containing an arbitrary number of crystal structures, into a number of individual STR files that are compatible with the Rietveld analysis software, TOPAS. 
 
 If the program is run with zero command line arguments, then a GUI is launched, otherwise it is command-line driven.
 
@@ -109,5 +109,5 @@ Finally, the STR is given a fixed Lorentzian crystallite size of 200 nm, and a r
 
 If you have any feedback, please contact me. If you find any bugs, please provide the CIF which caused the error, a description of the error, and a description of how you believe the program should work in that instance.
 
-Thanks, Matthew Rowles.
+Thanks, Matthew Rowles.<br />
 matthew.rowles@curtin.edu.au
