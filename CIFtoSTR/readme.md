@@ -12,36 +12,37 @@ If the program is run with zero command line arguments, then a GUI is launched, 
 
 A Windows executable file is available [here](https://github.com/rowlesmr/diffract/blob/main/CIFtoSTR/executables/ciftostr.exe).
 A Python zip application is available [here](https://github.com/rowlesmr/diffract/blob/main/CIFtoSTR/executables/ciftostr.pyz).
+
 You will need to click on the "Download" button to get your copy.
 
-The pure python is available [here](https://github.com/rowlesmr/diffract/tree/main/CIFtoSTR). You'll need both ciftostr.py and __main__.py
+The pure python is available [here](https://github.com/rowlesmr/diffract/tree/main/CIFtoSTR). You'll need both `ciftostr.py` and `__main__.py`
 
 
 ## How to run
 
-If using the Windows executable, for all the commands below, replace "python ciftostr.pyz" with "ciftostr"
+If using the Windows executable, for all the commands below, replace "`python ciftostr.pyz`" with "`ciftostr`"
 
 If you would like to run it in the command line, you need to provide some command-line arguments:
-`python ciftostr.pyz *.cif`
 
+`python ciftostr.pyz *.cif`<br />
 This will run through all of the CIF files in that directory.
 
-`python ciftostr.pyz C:\user\username\some\directory\name.cif D:\data\experiment\file.cif`
-`python ciftostr.pyz /nfs/an/disks/jj/home/dir/file.cif home/folder/nest/deeper/important.cif`
+`python ciftostr.pyz C:\user\username\some\directory\name.cif D:\data\experiment\file.cif`<br />
+`python ciftostr.pyz /nfs/an/disks/jj/home/dir/file.cif home/folder/nest/deeper/important.cif`<br />
 will convert these two CIF files specifically. The resulting STR files will be saved in the same path as their parent CIF file. Relative or absolute file paths can be used.
 
-`python ciftostr.pyz`
+`python ciftostr.pyz`<br />
 will launch the GUI. Use the "Browse" button to select files, and "Convert" to convert them.
 
 Bonus Windows executable behaviour: You can drag a CIF file onto the program icon, and it will convert the CIF for you. It may also work with the pyz file, depending on how your computer is set up.
 
-`python ciftostr.pyz --help`
+`python ciftostr.pyz --help`<br />
 will show some help information
 
-`python ciftostr.pyz --info`
+`python ciftostr.pyz --info`<br />
 will show some detailed information on what ciftostr is doing to the CIF data to convert to Topas STR format
 
-`python ciftostr.pyz --licence`
+`python ciftostr.pyz --licence`<br />
 will show some licence information
 
 
@@ -49,21 +50,21 @@ will show some licence information
 
 If you are using the .py files, you need to install these dependencies. If you are using the .pyz or .exe file, they are already included.
 
-PyCifRW v4.4.3 (or greater) is required to parse the CIF files.
+PyCifRW v4.4.3 (or greater) is required to parse the CIF files.<br />
 PySimpleGUI is required for the GUI. v4.39.1 was tested, but others may work.
 
 
-PyCifRW can be installed in a conda environment as 
-`conda install pycifrw -c conda-forge`
-or using `pip` as
+PyCifRW can be installed in a conda environment as <br />
+`conda install pycifrw -c conda-forge`<br />
+or using `pip` as<br />
 `pip install pycifrw`
 
-For further instructions, [see here](https://bitbucket.org/jamesrhester/pycifrw/src/development/INSTALLATION).
+For further PyCifRW instructions, [see here](https://bitbucket.org/jamesrhester/pycifrw/src/development/INSTALLATION).<br />
 PyCIFRW is available under the [Python 2.0 license](https://bitbucket.org/jamesrhester/pycifrw/src/development/LICENSE).
 
 
 
-PySimpleGUI can be installed as
+PySimpleGUI can be installed as<br />
 `python -m pip install PySimpleGUI`
 
 PySimpleGUI is available under the [LGPLv3 license](https://github.com/PySimpleGUI/PySimpleGUI/blob/master/license.txt). 
@@ -72,6 +73,7 @@ PySimpleGUI is available under the [LGPLv3 license](https://github.com/PySimpleG
 ## Supported platforms
 
 ciftostr is written entirely in Python (v3.9), and so should run wherever Python runs.
+
 ciftostr.exe was made using Pyinstaller, and should work on Windows
 
 
