@@ -25,7 +25,7 @@ If using the Windows executable, for all the commands below, replace "`python ci
 If you would like to run it in the command line, you need to provide some command-line arguments:
 
 `python ciftostr.pyz *.cif`<br />
-This will run through all of the CIF files in that directory.
+will run through all of the CIF files in that directory.
 
 `python ciftostr.pyz C:\user\username\some\directory\name.cif D:\data\experiment\file.cif`<br />
 `python ciftostr.pyz /nfs/an/disks/jj/home/dir/file.cif home/folder/nest/deeper/important.cif`<br />
@@ -50,8 +50,8 @@ will show some licence information
 
 If you are using the .py files, you need to install these dependencies. If you are using the .pyz or .exe file, they are already included.
 
-PyCifRW v4.4.3 (or greater) is required to parse the CIF files.<br />
-PySimpleGUI is required for the GUI. v4.39.1 was tested, but others may work.
+[PyCifRW v4.4.3](https://bitbucket.org/jamesrhester/pycifrw/src/development/) (or greater) is required to parse the CIF files.<br />
+[PySimpleGUI](https://pysimplegui.readthedocs.io/en/latest/) is required for the GUI. v4.39.1 was tested, but others may work.
 
 
 PyCifRW can be installed in a conda environment as <br />
@@ -74,12 +74,12 @@ PySimpleGUI is available under the [LGPLv3 license](https://github.com/PySimpleG
 
 ciftostr is written entirely in Python (v3.9), and so should run wherever Python runs.
 
-ciftostr.exe was made using Pyinstaller, and should work on Windows
+ciftostr.exe was made using [Pyinstaller](https://www.pyinstaller.org/index.html), and should work on Windows
 
 
 ## Licence
 
-ciftostr is made available using the LGPLv3 license. The full text is [here]()
+ciftostr is made available using the LGPLv3 license. The full text is [here](https://github.com/rowlesmr/diffract/blob/main/CIFtoSTR/LICENSE.LESSER)
 
 
 
@@ -93,17 +93,17 @@ Where similar or identical data could be given in several places, the values are
 
 This program uses the PyCifRW library, written by James Hester, to parse the CIF files into a format easily used to remix the underlying data. For the source code and other information, see https://bitbucket.org/jamesrhester/pycifrw/src/development. The GUI was created using PySimpleGUI. 
     
-The STR's phase_name is taken from '_chemical_name_mineral', '_chemical_name_common', '_chemical_name_systematic', or '_chemical_name_structure_type', in that order, appended with the value of the 'data' block. If none of these keys are available, then the name of the 'data_' block is used. This is also used as the filename of the STR file.
+The STR's phase\_name is taken from '\_chemical\_name\_mineral', '\_chemical\_name\_common', '\_chemical\_name\_systematic', or '\_chemical\_name\_structure\_type', in that order, appended with the value of the 'data' block. If none of these keys are available, then the name of the 'data\_' block is used. This is also used as the filename of the STR file.
     
-The unit cell parameters are taken from '_cell_length_a', '_cell_length_b', '_cell_length_c', '_cell_angle_alpha', '_cell_angle_beta', and '_cell_angle_gamma'. Some comparisons are made to enable some standard macros to be used (eg Cubic, Tetragonal...). In any of these fail, then all parameters are given as a fail safe.
+The unit cell parameters are taken from '\_cell\_length\_a', '\_cell\_length\_b', '\_cell\_length\_c', '\_cell\_angle\_alpha', '\_cell\_angle\_beta', and '\_cell\_angle\_gamma'. Some comparisons are made to enable some standard macros to be used (eg Cubic, Tetragonal...). In any of these fail, then all parameters are given as a fail safe.
 
-The space_group is taken from '_symmetry_space_group_name_H-M', '_space_group_name_H-M_alt', '_symmetry_Int_Tables_number', or '_space_group_IT_number', in that order. If none of these keys are available, then an empty string is written as the space group. The value of the space group is as exactly given in the CIF. No validation or editing is done.
+The space\_group is taken from '\_symmetry\_space\_group\_name\_H-M', '\_space\_group\_name\_H-M\_alt', '\_symmetry\_Int\_Tables\_number', or '\_space\_group\_IT\_number', in that order. If none of these keys are available, then an empty string is written as the space group. The value of the space group is as exactly given in the CIF. No validation or editing is done.
 
-The atomic sites are constructed as follows: The atom labels are taken from '_atom_site_label', with the fractional x, y, and z coordinates given by '_atom_site_fract_x', '_y', and '_z'. If the decimal values of the fractional coordinates are consistent with the fractions 1/6, 1/3, 2/3, or 5/6, then the decimal value is replaced by the fractions. The site occupancy is given by '_atom_site_occupancy', or by '1', if that key is not given. The atom type is given by '_atom_site_type_symbol', where available, or by the first one or two characters of the site label. If these characters match an element symbol, then that is used,  otherwise, the label is used in it's entirety, and the user must decide the correct atom type to use. An attempt is also made to reorder the charge given on an atom, to ensure it is compatible with TOPAS ordering, eg Fe+2, not Fe2+.
+The atomic sites are constructed as follows: The atom labels are taken from '\_atom\_site\_label', with the fractional x, y, and z coordinates given by '\_atom\_site\_fract\_x', '\_y', and '\_z'. If the decimal values of the fractional coordinates are consistent with the fractions 1/6, 1/3, 2/3, or 5/6, then the decimal value is replaced by the fractions. The site occupancy is given by '\_atom\_site\_occupancy', or by '1', if that key is not given. The atom type is given by '\_atom\_site\_type\_symbol', where available, or by the first one or two characters of the site label. If these characters match an element symbol, then that is used,  otherwise, the label is used in it's entirety, and the user must decide the correct atom type to use. An attempt is also made to reorder the charge given on an atom, to ensure it is compatible with TOPAS ordering, eg Fe+2, not Fe2+.
 
-Isotropic Atomic Displacement Parameters (ADPs; Biso), are taken from '_atom_site_B_iso_or_equiv', or from '_atom_site_U_iso_or_equiv', where they are then multiplied by 8*Pi^2 to give B values. If anisotropic ADPs are given, then '_atom_site_aniso_B_11', '_atom_site_aniso_B_22', and '_atom_site_aniso_B_33' are averaged to give an equivalent Biso value. Alternatively, the equivalent U values are used to calculate Biso. As anisotropic values could be given for a subset of the atoms in the structure, the labels given by '_atom_site_label' and '_atom_site_aniso_label' are matched, and if an atom doesn't have an anisotropic value, it takes its isotropic value, or is assigned a value of '1'.
+Isotropic Atomic Displacement Parameters (ADPs; Biso), are taken from '\_atom\_site\_B\_iso\_or\_equiv', or from '\_atom\_site\_U\_iso\_or\_equiv', where they are then multiplied by 8*Pi^2 to give B values. If anisotropic ADPs are given, then '\_atom\_site\_aniso\_B\_11', '\_atom\_site\_aniso\_B\_22', and '\_atom\_site\_aniso\_B\_33' are averaged to give an equivalent Biso value. Alternatively, the equivalent U values are used to calculate Biso. As anisotropic values could be given for a subset of the atoms in the structure, the labels given by '\_atom\_site\_label' and '\_atom\_site\_aniso\_label' are matched, and if an atom doesn't have an anisotropic value, it takes its isotropic value, or is assigned a value of '1'.
 
-The atomic site is also given a 'num_posns 0' entry, which will update with the multiplicity of the site following a refinement. This will allow the user to compare this value with the CIF or Vol A to help ensure that the correct symmetry is being applied.
+The atomic site is also given a 'num\_posns 0' entry, which will update with the multiplicity of the site following a refinement. This will allow the user to compare this value with the CIF or Vol A to help ensure that the correct symmetry is being applied.
 
 Finally, the STR is given a fixed Lorentzian crystallite size of 200 nm, and a refinable scale factor of 0.0001 to allow for an easy start to a refinement. All other values given in the STR are fixed, and require active intervention to name, refine, constrain, or restrain them.
 
