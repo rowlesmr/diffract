@@ -34,6 +34,8 @@ def write_str(cif_file, str_file = None, data = "all"):
         cif_file: path to a CIF file as a string
         str_file: give an explicit name for the resultant STR (excluding path)
         data : do you want 'all', the 'first', or the 'last' data blocks in the cif?
+               if "append", then all the structures from the cif are written to 
+                 one file
     Returns:
         None. Writes file to disk.
      """
@@ -51,16 +53,29 @@ def write_str(cif_file, str_file = None, data = "all"):
 
     #do I need to update the filename on each loop through the datakeys?
     get_new_filename = str_file is None
+    append_data = data == "append" 
+    update_filename = True # this is if data = "all", I need to flag when to change the name    
+
 
     for d in data_keys:
         s = create_str(cif, d)
 
-        if get_new_filename:
+        if get_new_filename and update_filename:
             str_file = clean_filename(get_phasename(cif, d)) + ".str"
 
-        f = os.path.join(path, str_file)
+        update_filename = not append_data # if I'm appending, I don't want to update the filename each time
+        
+        
+        if not os.path.isabs(str_file): #if the given strfile is a full path, use it, don't change it.
+            f = os.path.join(path, str_file)
+        else:
+            f = str_file
 
-        file_to_write = open(f, "w")
+        if append_data:
+            file_to_write = open(f, "a")
+        else:
+            file_to_write = open(f, "w")
+            
         print("Now writing " + file_to_write.name + ".")
         file_to_write.write(s)
         file_to_write.close()
@@ -78,14 +93,14 @@ def create_str(cif, data):
     Returns:
         A single string formatted as a TOPAS STR.
      """
-    s  = "str\n"
-    s += '\tphase_name "' + get_phasename(cif, data) + '"\n'
-    s += "\tPhase_Density_g_on_cm3( 0)\n"
-    s += "\tCS_L( ,200)\n"
-    s += "\tscale @ 0.0001\n"
+    s  = "\tstr\n"
+    s += '\t\tphase_name "' + get_phasename(cif, data) + '"\n'
+    s += "\t\tPhase_Density_g_on_cm3( 0)\n"
+    s += "\t\tCS_L( ,200)\n"
+    s += "\t\tscale @ 0.0001\n"
     s += get_unitcell(cif, data) + "\n"
-    s += '\tspace_group "' + get_spacegroup(cif, data) + '"\n'
-    s += get_atom_sites_string(cif, data)
+    s += '\t\tspace_group "' + get_spacegroup(cif, data) + '"\n'
+    s += get_atom_sites_string(cif, data) + '\n'
 
     return s
 
@@ -477,32 +492,32 @@ def get_unitcell(cif, data):
     s = ""
     if a == b and b == c: #cubic or rhombohedral
         if al == be and be == ga and al == float("90"): #cubic
-            s = concat("\tCubic(",a_s,")", sep="")
+            s = concat("\t\tCubic(",a_s,")", sep="")
         if al == be and be == ga and al != float("90"): #rhombohedral
-            s = concat("\tRhombohedral(",a_s,", ", al_s,")", sep="")
+            s = concat("\t\tRhombohedral(",a_s,", ", al_s,")", sep="")
 
     elif a == b and b != c: #tetragonal or hexagonal/trigonal
         if al == be and be == ga and al == float("90"): #tetragonal
-            s = concat("\tTetragonal(",a_s,", ", c_s, ")", sep="")
+            s = concat("\t\tTetragonal(",a_s,", ", c_s, ")", sep="")
         if al == be and al == float("90") and ga == float("120"): #hexagonal or trigonal
-            s = concat("\tHexagonal(",a_s,", ", c_s, ")", sep="")
+            s = concat("\t\tHexagonal(",a_s,", ", c_s, ")", sep="")
 
     elif a != b and a != c and b != c: #ortho, mono, tric
         if al == be and be == ga and al == float("90"): #ortho
-            s = concat("\ta",a_s,"\n\tb",b_s,"\n\tc",c_s, sep=" ")
+            s = concat("\t\ta",a_s,"\n\t\tb",b_s,"\n\t\tc",c_s, sep=" ")
         if al != be and al != ga and be != ga: #tric
-            s = concat("\ta ",a_s,"\n\tb ",b_s,"\n\tc ",c_s,"\n\tal",al_s,"\n\tbe",be_s,"\n\tga",ga_s, sep=" ")
+            s = concat("\t\ta ",a_s,"\n\t\tb ",b_s,"\n\t\tc ",c_s,"\n\t\tal",al_s,"\n\t\tbe",be_s,"\n\t\tga",ga_s, sep=" ")
         if al == be and al != ga and al == float("90"): #mono_1
-            s = concat("\ta ",a_s,"\n\tb ",b_s,"\n\tc ",c_s,"\n\tga",ga_s, sep=" ")
+            s = concat("\t\ta ",a_s,"\n\t\tb ",b_s,"\n\t\tc ",c_s,"\n\t\tga",ga_s, sep=" ")
         if al == ga and al != be and al == float("90"): #mono_2
-            s = concat("\ta ",a_s,"\n\tb ",b_s,"\n\tc ",c_s,"\n\tbe",be_s, sep=" ")
+            s = concat("\t\ta ",a_s,"\n\t\tb ",b_s,"\n\t\tc ",c_s,"\n\t\tbe",be_s, sep=" ")
         if be == ga and be != al and be == float("90"): #mono_3
-            s = concat("\ta ",a_s,"\n\tb ",b_s,"\n\tc ",c_s,"\n\tal",al_s, sep=" ")
+            s = concat("\t\ta ",a_s,"\n\t\tb ",b_s,"\n\t\tc ",c_s,"\n\t\tal",al_s, sep=" ")
 
     #to catch everything else
     else:
-        s = concat("\ta ",a_s,"\n\tb ",b_s,"\n\tc ",c_s,
-                   "\n\tal",al_s,"\n\tbe",be_s,"\n\tga",ga_s, sep=" ")
+        s = concat("\t\ta ",a_s,"\n\t\tb ",b_s,"\n\t\tc ",c_s,
+                   "\n\t\tal",al_s,"\n\t\tbe",be_s,"\n\t\tga",ga_s, sep=" ")
 
     return s
 
@@ -527,7 +542,7 @@ def get_unitcell2(cif, data):
     be = strip_brackets(cif[data]["_cell_angle_beta"][:])
     ga = strip_brackets(cif[data]["_cell_angle_gamma"][:])
 
-    return concat("\ta",a,"b",b,"c",c,"\n\tal",al,"be",be,"ga",ga, sep=" ")
+    return concat("\t\ta",a,"b",b,"c",c,"\n\t\tal",al,"be",be,"ga",ga, sep=" ")
 
 
 def get_atom_sites_string(cif, data):
@@ -612,7 +627,7 @@ def make_atom_site_string(label, x, y, z, atom, occ, beq):
     Returns:
         A string containing the atomic site parameters in STR format.
     """
-    return concat("\tsite",label,"num_posns 0\tx", x, "y", y, "z", z,
+    return concat("\t\tsite",label,"num_posns 0\tx", x, "y", y, "z", z,
                   "occ", atom, occ, "beq", beq, "\n", sep = " ")
 
 

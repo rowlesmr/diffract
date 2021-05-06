@@ -35,6 +35,11 @@ If you would like to run it in the command line, you need to provide some comman
 >python ciftostr.pyz *.cif
 or you can type the individual names of CIFs to use after the pyz file.
 
+The program can also run in jEdit mode.
+>python ciftostr --jedit *.cif output.str
+In this mode, all structures in all cifs are written to a single file. This can be used by the 
+jEdit macros to import a structure from a CIF into jEdit, when writing INP files.
+
 For information on exactly what the program does, click 'Info', or running
 >python ciftostr.pyz --info
 >python ciftostr.pyz --licence
@@ -1129,15 +1134,30 @@ def main():
         print(licence())
         sys.exit()
 
+    if "--jedit" == sys.argv[1]:
+        print("jEdit mode activated!")
+        
+        filenames = []
+        for i in range(2,len(sys.argv)-1):
+            filenames += glob(sys.argv[i])
+        strname = sys.argv[-1]
+        
+        #delete the contents of the strname file, if it exists
+        f = open(strname, "w")
+        f.write("")
+        f.close()
+               
+        convert_cifs_to_strs(filenames, str_file = strname, data = "append")
+        
+    else:
+        filenames = []
+        for i in range(1,len(sys.argv)):
+            filenames += glob(sys.argv[i])
+    
+        convert_cifs_to_strs(filenames) #this does the actual CIF to STR conversion
 
-    filenames = []
-    for i in range(1,len(sys.argv)):
-        filenames += glob(sys.argv[i])
 
-    convert_cifs_to_strs(filenames) #this does the actual CIF to STR conversion
-
-
-def convert_cifs_to_strs(filenames):
+def convert_cifs_to_strs(filenames, str_file = None, data = "all"):
     """
     Helper function to keep the creation of STRs consistent between the commandline and GUI versions
 
@@ -1148,7 +1168,7 @@ def convert_cifs_to_strs(filenames):
     """
     for file in filenames:
         try:
-            ciftostr.write_str(file)
+            ciftostr.write_str(file, str_file, data)
             print("--------------------")
         except Exception as e: #just print the exception and keep going
             print(e)
