@@ -86,7 +86,8 @@ copy citationdate.py %git%
 del %git%executables\%filename%.pyz
 copy %filename%.pyz %git%executables\
 
-
+del %git%readme.md
+copy readme.md %git%
 
 del %git%make.bat
 copy make.bat %git%
