@@ -20,7 +20,6 @@ import copy
 #https://pypi.org/project/PyCifRW/4.4/  https://bitbucket.org/jamesrhester/pycifrw/downloads/
 import CifFile
 
-
 #ciffile = "testcifs\\example.cif"
 #cif = cf.ReadCif(ciffile)
 #data = cif.keys()[0]
@@ -32,14 +31,17 @@ def write_str(cif_file, str_file = None, data = "all"):
 
     Args:
         cif_file: path to a CIF file as a string
-        str_file: give an explicit name for the resultant STR (excluding path)
+        str_file: give an explicit name for the resultant STR.
+                  If the str_file name includes a full path, then that is used.
+                  If the str_file is a relative path, then this is joined to the 
+                    path of the CIF file
         data : do you want 'all', the 'first', or the 'last' data blocks in the cif?
                if "append", then all the structures from the cif are written to 
                  one file
     Returns:
         None. Writes file to disk.
      """
-    print("Reading " + cif_file + ".")
+    print(f"Now reading {cif_file}.")
     cif = CifFile.ReadCif(cif_file)
 
     if data == "first":
@@ -51,32 +53,29 @@ def write_str(cif_file, str_file = None, data = "all"):
 
     path = os.path.dirname(cif_file)
 
-    #do I need to update the filename on each loop through the datakeys?
-    get_new_filename = str_file is None
-    append_data = data == "append" 
-    update_filename = True # this is if data = "all", I need to flag when to change the name    
-
+    get_new_output_filename = str_file is None # do I need to update the filename on each loop through the datakeys?
+    append_data = (data == "append") # am I appending all strs to the same output file?
+    update_output_filename = True # by default, I want to update the output filename  
 
     for d in data_keys:
         s = create_str(cif, d)
 
-        if get_new_filename and update_filename:
+        if get_new_output_filename and update_output_filename:
             str_file = clean_filename(get_phasename(cif, d)) + ".str"
 
-        update_filename = not append_data # if I'm appending, I don't want to update the filename each time
-        
-        
-        if not os.path.isabs(str_file): #if the given strfile is a full path, use it, don't change it.
-            f = os.path.join(path, str_file)
-        else:
+        update_output_filename = not append_data # if I'm appending, I don't want to update the filename each time
+                
+        if os.path.isabs(str_file): #if the given strfile is a full path, use it, don't change it.
             f = str_file
+        else: # otherwise, take the path from the cif file
+            f = os.path.join(path, str_file)
 
         if append_data:
             file_to_write = open(f, "a")
         else:
             file_to_write = open(f, "w")
             
-        print("Now writing " + file_to_write.name + ".")
+        print(f"Now writing {file_to_write.name}.")
         file_to_write.write(s)
         file_to_write.close()
 
@@ -117,8 +116,7 @@ def strip_brackets(s):
         A string, with no brackets at the end of each string
      """
 
-    if s is None:
-        return None
+    if s is None: return None
 
     try:
         bracket = s.index("(")
@@ -142,27 +140,8 @@ def change_NA_value(s):
         A string, with None in place of a single question mark or full stop
      """
 
-    if s in ("?", "."):
-        s = None
-
+    if s in ("?", "."): s = None
     return s
-
-
-def concat(*ss, sep="_"):
-    """
-    Concatenate an aribtrary number of strings using the given separator.
-
-    Args:
-        *ss: An arbitrary number of strings
-        sep: A string used to separate each string. Defaults to "_"
-    Returns:
-        A single string consisting of the given strings separated by the separator
-     """
-    r = ""
-    for s in ss:
-        r += s + sep
-    r = r[0:len(r)-len(sep)] #get rid of final separator
-    return r
 
 
 def val_to_frac(s):
@@ -274,8 +253,7 @@ def pad_string_list(l, pad="post"):
     List of strings, all of the same length
 
     """
-    if l is None:
-        return None
+    if l is None: return None
 
     # if any strings start with '-', it's probably a negative number, and I need to prepend
     #  a space to those that don't start with a '-'.
@@ -316,8 +294,7 @@ def pad_string(s, d, pad):
     s : String of length d. If len(s) < d originaly, then s is returned unchanged.
 
     """
-    if s is None:
-        return None
+    if s is None: return None
 
     while len(s) < d:
         if pad == "post":
@@ -428,8 +405,8 @@ def get_phasename(cif, data):
     if phasename in ("", ".", "?", None):
         r = data
     else:
-        r = concat(phasename, data)
-
+        r = f"{phasename}_{data}"
+        
     return r
 
 
@@ -492,32 +469,31 @@ def get_unitcell(cif, data):
     s = ""
     if a == b and b == c: #cubic or rhombohedral
         if al == be and be == ga and al == float("90"): #cubic
-            s = concat("\t\tCubic(",a_s,")", sep="")
+            s = f"\t\tCubic({a_s})"
         if al == be and be == ga and al != float("90"): #rhombohedral
-            s = concat("\t\tRhombohedral(",a_s,", ", al_s,")", sep="")
+            s = f"\t\tRhombohedral({a_s}, {al_s})"
 
     elif a == b and b != c: #tetragonal or hexagonal/trigonal
         if al == be and be == ga and al == float("90"): #tetragonal
-            s = concat("\t\tTetragonal(",a_s,", ", c_s, ")", sep="")
+            s = f"\t\tTetragonal({a_s}, {c_s})"
         if al == be and al == float("90") and ga == float("120"): #hexagonal or trigonal
-            s = concat("\t\tHexagonal(",a_s,", ", c_s, ")", sep="")
+            s = f"\t\tHexagonal({a_s}, {c_s})"
 
     elif a != b and a != c and b != c: #ortho, mono, tric
         if al == be and be == ga and al == float("90"): #ortho
-            s = concat("\t\ta",a_s,"\n\t\tb",b_s,"\n\t\tc",c_s, sep=" ")
+            s = f"\t\ta {a_s}\n\t\tb {b_s}\n\t\tc {c_s}"
         if al != be and al != ga and be != ga: #tric
-            s = concat("\t\ta ",a_s,"\n\t\tb ",b_s,"\n\t\tc ",c_s,"\n\t\tal",al_s,"\n\t\tbe",be_s,"\n\t\tga",ga_s, sep=" ")
+            s = f"\t\ta  {a_s}\n\t\tb  {b_s}\n\t\tc  {c_s}\n\t\tal {al_s}\n\t\tbe {be_s}\n\t\tga {ga_s}"
         if al == be and al != ga and al == float("90"): #mono_1
-            s = concat("\t\ta ",a_s,"\n\t\tb ",b_s,"\n\t\tc ",c_s,"\n\t\tga",ga_s, sep=" ")
+            s = f"\t\ta  {a_s}\n\t\tb  {b_s}\n\t\tc  {c_s}\n\t\tga {ga_s}"
         if al == ga and al != be and al == float("90"): #mono_2
-            s = concat("\t\ta ",a_s,"\n\t\tb ",b_s,"\n\t\tc ",c_s,"\n\t\tbe",be_s, sep=" ")
+            s = f"\t\ta  {a_s}\n\t\tb  {b_s}\n\t\tc  {c_s}\n\t\tbe {be_s}"
         if be == ga and be != al and be == float("90"): #mono_3
-            s = concat("\t\ta ",a_s,"\n\t\tb ",b_s,"\n\t\tc ",c_s,"\n\t\tal",al_s, sep=" ")
-
+            s = f"\t\ta  {a_s}\n\t\tb  {b_s}\n\t\tc  {c_s}\n\t\tal {al_s}"
+            
     #to catch everything else
     else:
-        s = concat("\t\ta ",a_s,"\n\t\tb ",b_s,"\n\t\tc ",c_s,
-                   "\n\t\tal",al_s,"\n\t\tbe",be_s,"\n\t\tga",ga_s, sep=" ")
+        s = f"\t\ta  {a_s}\n\t\tb  {b_s}\n\t\tc  {c_s}\n\t\tal {al_s}\n\t\tbe {be_s}\n\t\tga {ga_s}"
 
     return s
 
@@ -542,7 +518,7 @@ def get_unitcell2(cif, data):
     be = strip_brackets(cif[data]["_cell_angle_beta"][:])
     ga = strip_brackets(cif[data]["_cell_angle_gamma"][:])
 
-    return concat("\t\ta",a,"b",b,"c",c,"\n\t\tal",al,"be",be,"ga",ga, sep=" ")
+    return f"\t\ta {a} b {b} c {c}\n\t\tal {al} be {be} ga {ga}"
 
 
 def get_atom_sites_string(cif, data):
@@ -585,7 +561,12 @@ def get_atom_sites_string(cif, data):
 
     #type of atom
     try:
-        atoms = [fix_atom_type(i) for i in cif[data]["_atom_site_type_symbol"]]
+        atom_symbols = get_dict_entry_copy_throw_error(cif[data],"_atom_site_type_symbol")
+        atom_labels  = get_dict_entry_copy_throw_error(cif[data],"_atom_site_label")
+        atoms = [None] * len(atom_symbols)
+        for i in range(len(atoms)):
+            atoms[i] = fix_atom_type(atom_symbols[i], atom_labels[i])
+        # atoms = [fix_atom_type(i) for i in cif[data]["_atom_site_type_symbol"]]
     except KeyError:
         print("Warning! Atom types inferred from site labels. Please check for correctness.")
         atoms = [convert_site_label_to_atom(label) for label in labels]
@@ -603,7 +584,7 @@ def get_atom_sites_string(cif, data):
 
     r = ""
     for i in range(len(labels)):
-        r += make_atom_site_string(labels[i],x[i],y[i],z[i],atoms[i],occ[i],b_iso[i])
+        r += make_atom_site_string(labels[i],x[i],y[i],z[i],atoms[i],occ[i],b_iso[i]) + "\n"
 
     return r
 
@@ -627,8 +608,7 @@ def make_atom_site_string(label, x, y, z, atom, occ, beq):
     Returns:
         A string containing the atomic site parameters in STR format.
     """
-    return concat("\t\tsite",label,"num_posns 0\tx", x, "y", y, "z", z,
-                  "occ", atom, occ, "beq", beq, "\n", sep = " ")
+    return f"\t\tsite {label} num_posns 0\tx {x} y {y} z {z} occ {atom} {occ} beq {beq}"
 
 
 def convert_site_label_to_atom(s):
@@ -669,7 +649,7 @@ def convert_site_label_to_atom(s):
     return s #if everything fails, just return what the label was
 
 
-def fix_atom_type(a):
+def fix_atom_type(a, orig_site_label = None):
     """
     Given an atom type from "_atom_site_type_symbol", any charge given is sometimes the wrong
     way around for TOPAS to handle. This function uses a regex to switch and given charge
@@ -711,10 +691,10 @@ def fix_atom_type(a):
         else: #the atom was probably the right way around to begin with
             return a
 
-    return convert_atom_type_to_topas(symbol+sign+charge)
+    return convert_atom_type_to_topas(symbol+sign+charge, orig_site_label)
 
 
-def convert_atom_type_to_topas(a):
+def convert_atom_type_to_topas(a, orig_site_label = None):
     """
     Given an atom type in the correct TOPAS site format, the CIF dictionary can allow charges
     for which there are no scattering factors..
@@ -756,8 +736,13 @@ def convert_atom_type_to_topas(a):
     #if we get here, the atom doesn't exist in the tuple.
     regex = re.search("([A-Za-z]{1,2})([+-]{0,1})(\d{0,2})", a) #Cu+2
     symbol = regex.group(1)
+    
+    if orig_site_label is not None: 
+        insert_text = f" in site {orig_site_label}"
+    else:
+        insert_text = ""
 
-    print(a + " is not a legal TOPAS scattering factor. Atom replaced with " + symbol + ".")
+    print(f"{a} is not a legal TOPAS scattering factor. Atom{insert_text} replaced with {symbol}.")
 
     return symbol
 
@@ -772,6 +757,8 @@ def get_beq(cif, data):
     "_atom_site_B_iso_or_equiv". (in that order)
 
     If no values are present, then a value of "1" is assigned.
+    
+    At this point in time, the i_th beq value corresponds to the i_th site label
 
     Args:
         cif: a PyCifRW dictionary
@@ -802,19 +789,23 @@ def get_beq(cif, data):
         except KeyError:
             pass
 
+
+    labels = get_dict_entry_copy_throw_error(cif[data],"_atom_site_label")
+    
     #if we get here, there were no B values in the CIF. Booo!
     if not go_to_end:
-        r = [None]*len(get_dict_entry_copy_throw_error(cif[data],"_atom_site_label"))
+        r = [None]*len(labels)
 
+
+    # lets do some final checks
     for i in range(len(r)):
-        if r[i] is None:
-            print("Warning! Biso value missing! Default value of 1 entered")
+        if r[i] is None or float(r[i]) == 0.0: # missing or zero value
+            print(f"Warning! Biso value missing or zero for site {labels[i]}! Default value of 1 entered")
             r[i] = "1."
 
-    #do the final check for negative values
-    for s in r:
-        if s.startswith("-"):
-            print("Warning! Negative atomic displacement parameter detected!")
+        if r[i].startswith("-"):
+            print(f"Warning! Negative atomic displacement parameter detected for site {labels[i]}!")
+            
 
     return r
 
@@ -839,7 +830,7 @@ def get_b_iso(cif, data):
     num = count_nones(b_iso)
 
     if num > 0:
-        print(str(num) + " missing Biso values.")
+        print(f"{num} missing Biso values.")
 
     return b_iso
 
@@ -858,8 +849,7 @@ def convert_u_to_b(s):
     A string representing a B value. Could be None.
 
     """
-    if s is None:
-        return None
+    if s is None: return None
 
     s = float(s)
     s = 8*math.pi**2*s
@@ -888,7 +878,7 @@ def get_u_iso(cif, data):
     num = count_nones(b_iso)
 
     if num > 0:
-        print(str(num) + " missing Uiso values.")
+        print(f"{num} missing Uiso values.")
 
     return b_iso
 
@@ -920,10 +910,10 @@ def convert_aniso_to_iso(cif,data):
     #if we get to here, then there should be some sort of anisotropic values
     try:
         b_equiv = get_b_aniso(cif,data) #if it isn't Baniso,
-        print(str(len(b_equiv)) + " Biso values calculated from anisotropic B values.")
+        print(f"{len(b_equiv)} Biso values calculated from anisotropic B values.")
     except KeyError:
         b_equiv = get_u_aniso(cif,data) #then it should be Uaniso
-        print(str(len(b_equiv)) + " Biso values calculated from anisotropic U values.")
+        print(f"{len(b_equiv)} Biso values calculated from anisotropic U values.")
 
     #do comparison with atom_labels to make sure
     # every atom has a Bequiv
