@@ -18,10 +18,8 @@ import citationdate
 
 
 CITATION =\
-"""
-Matthew R. Rowles, CIFtoSTR, https://github.com/rowlesmr/diffract/tree/main/CIFtoSTR, version date: 
-"""\
-+ citationdate.datetime
+f"Matthew R. Rowles, CIFtoSTR, https://github.com/rowlesmr/diffract/tree/main/CIFtoSTR, version date: {citationdate.datetime}"
+
 
 
 HELP = \
@@ -1087,7 +1085,7 @@ def gui():
               [sg.Button('Convert'), sg.Button('Exit'), sg.Button('Info'), sg.Button('Licence')]
              ]
 
-    window = sg.Window("CIFtoSTR", layout, finalize=True)
+    window = sg.Window("CIFtoSTR", layout, finalize=True) #, resizable=True)
 
     #initial help text every time you open the program.
     print(HELP)
