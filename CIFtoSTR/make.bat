@@ -79,6 +79,8 @@ copy %filename%.py %git%
 del %git%__main__.py
 copy __main__.py %git%
 
+del %git%ciftostrmain.py
+copy ciftostrmain.py %git%
 
 del %git%citationdate.py
 copy citationdate.py %git%
