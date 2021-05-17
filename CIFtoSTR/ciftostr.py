@@ -13,6 +13,8 @@ Created on Mon Apr 19 17:10:25 2021
 
 """
 
+# pylint: disable=line-too-long, invalid-name.
+
 import math
 import re #regular expression
 import os #ntpath #to separate path and filename
@@ -20,11 +22,11 @@ import copy
 #https://pypi.org/project/PyCifRW/4.4/  https://bitbucket.org/jamesrhester/pycifrw/downloads/
 import CifFile
 
-#ciffile = "testcifs\\example.cif"
-#cif = cf.ReadCif(ciffile)
-#data = cif.keys()[0]
+# ciffile = "testcifs\\Ag_1100136.cif" # "testcifs\\internet01.cif" # "testcifs\\example.cif" #
+# cif = CifFile.ReadCif(ciffile)
+# data = cif.keys()[0]
 
-
+# TODO: add test
 def write_str(cif_file, str_file = None, data = "all"):
     """
     Writes all structures in a given CIF to one file each from a given cif file..
@@ -33,10 +35,10 @@ def write_str(cif_file, str_file = None, data = "all"):
         cif_file: path to a CIF file as a string
         str_file: give an explicit name for the resultant STR.
                   If the str_file name includes a full path, then that is used.
-                  If the str_file is a relative path, then this is joined to the 
+                  If the str_file is a relative path, then this is joined to the
                     path of the CIF file
         data : do you want 'all', the 'first', or the 'last' data blocks in the cif?
-               if "append", then all the structures from the cif are written to 
+               if "append", then all the structures from the cif are written to
                  one file
     Returns:
         None. Writes file to disk.
@@ -55,7 +57,7 @@ def write_str(cif_file, str_file = None, data = "all"):
 
     get_new_output_filename = str_file is None # do I need to update the filename on each loop through the datakeys?
     append_data = (data == "append") # am I appending all strs to the same output file?
-    update_output_filename = True # by default, I want to update the output filename  
+    update_output_filename = True # by default, I want to update the output filename
 
     for d in data_keys:
         s = create_str(cif, d)
@@ -64,7 +66,7 @@ def write_str(cif_file, str_file = None, data = "all"):
             str_file = clean_filename(get_phasename(cif, d)) + ".str"
 
         update_output_filename = not append_data # if I'm appending, I don't want to update the filename each time
-                
+
         if os.path.isabs(str_file): #if the given strfile is a full path, use it, don't change it.
             f = str_file
         else: # otherwise, take the path from the cif file
@@ -74,14 +76,14 @@ def write_str(cif_file, str_file = None, data = "all"):
             file_to_write = open(f, "a")
         else:
             file_to_write = open(f, "w")
-            
+
         print(f"Now writing {file_to_write.name}.")
         file_to_write.write(s)
         file_to_write.close()
 
     print("Done.")
 
-
+# TODO: add test
 def create_str(cif, data):
     """
     Creates a single string formatted as an STR representing the given data block in the cif.
@@ -93,12 +95,12 @@ def create_str(cif, data):
         A single string formatted as a TOPAS STR.
      """
     s  = "\tstr\n"
-    s += '\t\tphase_name "' + get_phasename(cif, data) + '"\n'
+    s += f'\t\tphase_name "{get_phasename(cif, data)}"\n'
     s += "\t\tPhase_Density_g_on_cm3( 0)\n"
     s += "\t\tCS_L( ,200)\n"
     s += "\t\tscale @ 0.0001\n"
     s += get_unitcell(cif, data) + "\n"
-    s += '\t\tspace_group "' + get_spacegroup(cif, data) + '"\n'
+    s += f'\t\tspace_group "{get_spacegroup(cif, data)}"\n'
     s += get_atom_sites_string(cif, data) + '\n'
 
     return s
@@ -115,8 +117,8 @@ def strip_brackets(s):
     Returns:
         A string, with no brackets at the end of each string
      """
-
-    if s is None: return None
+    if s is None:
+        return None
 
     try:
         bracket = s.index("(")
@@ -139,8 +141,8 @@ def change_NA_value(s):
     Returns:
         A string, with None in place of a single question mark or full stop
      """
-
-    if s in ("?", "."): s = None
+    if s in ("?", "."):
+        s = None
     return s
 
 
@@ -178,7 +180,6 @@ def val_to_frac(s):
         return None
 
     fraction_detected = False
-
     if s in ONE_SIXTH:
         fraction_detected = True
         s = ONE_SIXTH_FRAC
@@ -228,7 +229,7 @@ def get_dict_entry_copy_throw_error(dct, key):
 
     Args:
         dct: A dictionary
-        key: an keys.
+        key: a key.
     Returns:
         A deepcopy of the dictionary value associated with the key.
 
@@ -253,12 +254,13 @@ def pad_string_list(l, pad="post"):
     List of strings, all of the same length
 
     """
-    if l is None: return None
+    if l is None:
+        return None
 
     # if any strings start with '-', it's probably a negative number, and I need to prepend
     #  a space to those that don't start with a '-'.
     negative_string = False
-        
+
     for s in l:
         if s.startswith("-"):
             negative_string =True
@@ -273,7 +275,7 @@ def pad_string_list(l, pad="post"):
         if len(s) > max_len:
             max_len = len(s)
 
-    l = [pad_string(s, max_len, "post") for s in l]
+    l = [pad_string(s, max_len, pad) for s in l]
 
     return l
 
@@ -294,11 +296,12 @@ def pad_string(s, d, pad):
     s : String of length d. If len(s) < d originaly, then s is returned unchanged.
 
     """
-    if s is None: return None
+    if s is None:
+        return None
 
     while len(s) < d:
         if pad == "post":
-            s += " "
+            s = s + " "
         elif pad == "pre":
             s = " " + s
         else:
@@ -406,7 +409,7 @@ def get_phasename(cif, data):
         r = data
     else:
         r = f"{phasename}_{data}"
-        
+
     return r
 
 
@@ -427,10 +430,10 @@ def get_spacegroup(cif, data):
         A string denoting the space group of the phase, as given in the CIF.
      """
     spacegroup = get_dict_entry_copy(cif[data], "_symmetry_space_group_name_H-M",
-                                             "_space_group_name_H-M_alt",
-                                             "_symmetry_Int_Tables_number",
-                                             "_space_group_IT_number",
-                                             default = "")
+                                                "_space_group_name_H-M_alt",
+                                                "_symmetry_Int_Tables_number",
+                                                "_space_group_IT_number",
+                                                default = "")
 
     return spacegroup
 
@@ -443,7 +446,6 @@ def get_unitcell(cif, data):
 
     see also get_unitcell2() - it makes no attempt to pattern-match
 
-
     Args:
         cif: a PyCifRW dictionary
         data: the key value for a data block in the CIF
@@ -452,12 +454,12 @@ def get_unitcell(cif, data):
     Raises:
         KeyError: if any of the unit cell parameters are not present in the datablock.
     """
-    a_s  = strip_brackets(cif[data]["_cell_length_a"][:])
-    b_s  = strip_brackets(cif[data]["_cell_length_b"][:])
-    c_s  = strip_brackets(cif[data]["_cell_length_c"][:])
-    al_s = strip_brackets(cif[data]["_cell_angle_alpha"][:])
-    be_s = strip_brackets(cif[data]["_cell_angle_beta"][:])
-    ga_s = strip_brackets(cif[data]["_cell_angle_gamma"][:])
+    a_s  = strip_brackets(get_dict_entry_copy_throw_error(cif[data],"_cell_length_a"))
+    b_s  = strip_brackets(get_dict_entry_copy_throw_error(cif[data],"_cell_length_b"))
+    c_s  = strip_brackets(get_dict_entry_copy_throw_error(cif[data],"_cell_length_c"))
+    al_s = strip_brackets(get_dict_entry_copy_throw_error(cif[data],"_cell_angle_alpha"))
+    be_s = strip_brackets(get_dict_entry_copy_throw_error(cif[data],"_cell_angle_beta"))
+    ga_s = strip_brackets(get_dict_entry_copy_throw_error(cif[data],"_cell_angle_gamma"))
 
     a  = float(a_s)
     b  = float(b_s)
@@ -490,7 +492,7 @@ def get_unitcell(cif, data):
             s = f"\t\ta  {a_s}\n\t\tb  {b_s}\n\t\tc  {c_s}\n\t\tbe {be_s}"
         if be == ga and be != al and be == float("90"): #mono_3
             s = f"\t\ta  {a_s}\n\t\tb  {b_s}\n\t\tc  {c_s}\n\t\tal {al_s}"
-            
+
     #to catch everything else
     else:
         s = f"\t\ta  {a_s}\n\t\tb  {b_s}\n\t\tc  {c_s}\n\t\tal {al_s}\n\t\tbe {be_s}\n\t\tga {ga_s}"
@@ -511,12 +513,12 @@ def get_unitcell2(cif, data):
     Raises:
         KeyError: if any of the unit cell parameters are not present in the datablock.
     """
-    a  = strip_brackets(cif[data]["_cell_length_a"][:])
-    b  = strip_brackets(cif[data]["_cell_length_b"][:])
-    c  = strip_brackets(cif[data]["_cell_length_c"][:])
-    al = strip_brackets(cif[data]["_cell_angle_alpha"][:])
-    be = strip_brackets(cif[data]["_cell_angle_beta"][:])
-    ga = strip_brackets(cif[data]["_cell_angle_gamma"][:])
+    a  = strip_brackets(get_dict_entry_copy_throw_error(cif[data],"_cell_length_a"))
+    b  = strip_brackets(get_dict_entry_copy_throw_error(cif[data],"_cell_length_b"))
+    c  = strip_brackets(get_dict_entry_copy_throw_error(cif[data],"_cell_length_c"))
+    al = strip_brackets(get_dict_entry_copy_throw_error(cif[data],"_cell_angle_alpha"))
+    be = strip_brackets(get_dict_entry_copy_throw_error(cif[data],"_cell_angle_beta"))
+    ga = strip_brackets(get_dict_entry_copy_throw_error(cif[data],"_cell_angle_gamma"))
 
     return f"\t\ta {a} b {b} c {c}\n\t\tal {al} be {be} ga {ga}"
 
@@ -543,7 +545,6 @@ def get_atom_sites_string(cif, data):
     If the decimal values of the fractional coordinates are consistent with the fractions
     1/6, 1/3, 2/3, or 5/6, then the decimal value is replaced by the fractional representation.
 
-
     Args:
         cif: a PyCifRW dictionary
         data: the key value for a data block in the CIF
@@ -563,10 +564,7 @@ def get_atom_sites_string(cif, data):
     try:
         atom_symbols = get_dict_entry_copy_throw_error(cif[data],"_atom_site_type_symbol")
         atom_labels  = get_dict_entry_copy_throw_error(cif[data],"_atom_site_label")
-        atoms = [None] * len(atom_symbols)
-        for i in range(len(atoms)):
-            atoms[i] = fix_atom_type(atom_symbols[i], atom_labels[i])
-        # atoms = [fix_atom_type(i) for i in cif[data]["_atom_site_type_symbol"]]
+        atoms = [fix_atom_type(symbol, label) for symbol, label in zip(atom_symbols, atom_labels)]
     except KeyError:
         print("Warning! Atom types inferred from site labels. Please check for correctness.")
         atoms = [convert_site_label_to_atom(label) for label in labels]
@@ -582,11 +580,9 @@ def get_atom_sites_string(cif, data):
     #ADPs
     b_iso = pad_string_list(get_beq(cif, data))
 
-    r = ""
-    for i in range(len(labels)):
-        r += make_atom_site_string(labels[i],x[i],y[i],z[i],atoms[i],occ[i],b_iso[i]) + "\n"
+    r = [make_atom_site_string(label,xf,yf,zf,atom,oc,b) + "\n" for label,xf,yf,zf,atom,oc,b in zip(labels, x, y, z, atoms, occ, b_iso)]
 
-    return r
+    return "".join(r)
 
 
 def make_atom_site_string(label, x, y, z, atom, occ, beq):
@@ -736,8 +732,8 @@ def convert_atom_type_to_topas(a, orig_site_label = None):
     #if we get here, the atom doesn't exist in the tuple.
     regex = re.search("([A-Za-z]{1,2})([+-]{0,1})(\d{0,2})", a) #Cu+2
     symbol = regex.group(1)
-    
-    if orig_site_label is not None: 
+
+    if orig_site_label is not None:
         insert_text = f" in site {orig_site_label}"
     else:
         insert_text = ""
@@ -745,69 +741,6 @@ def convert_atom_type_to_topas(a, orig_site_label = None):
     print(f"{a} is not a legal TOPAS scattering factor. Atom{insert_text} replaced with {symbol}.")
 
     return symbol
-
-
-def get_beq(cif, data):
-    """
-    Returns a list of strings giving the isotropic atomic displacement parameters, B, of
-    all atomic sites.
-
-    They values are taken from "_atom_site_aniso_U_11", "_22", "_33" or
-    "_atom_site_aniso_B_11", "_22", "_33", or "_atom_site_U_iso_or_equiv", or
-    "_atom_site_B_iso_or_equiv". (in that order)
-
-    If no values are present, then a value of "1" is assigned.
-    
-    At this point in time, the i_th beq value corresponds to the i_th site label
-
-    Args:
-        cif: a PyCifRW dictionary
-        data: the key value for a data block in the CIF
-    Returns:
-        A list containing the isotropic atomic displacement parameters, B, of
-    all atomic sites.
-    """
-    go_to_end = False
-    r = []
-    try:
-        r = convert_aniso_to_iso(cif,data)
-        go_to_end = True
-    except KeyError:
-        pass
-
-    if not go_to_end:
-        try:
-            r = get_u_iso(cif, data)
-            go_to_end = True
-        except KeyError:
-            pass
-
-    if not go_to_end:
-        try:
-            r = get_b_iso(cif,data)
-            go_to_end = True
-        except KeyError:
-            pass
-
-
-    labels = get_dict_entry_copy_throw_error(cif[data],"_atom_site_label")
-    
-    #if we get here, there were no B values in the CIF. Booo!
-    if not go_to_end:
-        r = [None]*len(labels)
-
-
-    # lets do some final checks
-    for i in range(len(r)):
-        if r[i] is None or float(r[i]) == 0.0: # missing or zero value
-            print(f"Warning! Biso value missing or zero for site {labels[i]}! Default value of 1 entered")
-            r[i] = "1."
-
-        if r[i].startswith("-"):
-            print(f"Warning! Negative atomic displacement parameter detected for site {labels[i]}!")
-            
-
-    return r
 
 
 def get_b_iso(cif, data):
@@ -828,7 +761,6 @@ def get_b_iso(cif, data):
     b_iso = [change_NA_value(strip_brackets(i)) for i in cif[data]["_atom_site_B_iso_or_equiv"]]
 
     num = count_nones(b_iso)
-
     if num > 0:
         print(f"{num} missing Biso values.")
 
@@ -849,7 +781,8 @@ def convert_u_to_b(s):
     A string representing a B value. Could be None.
 
     """
-    if s is None: return None
+    if s is None:
+        return None
 
     s = float(s)
     s = 8*math.pi**2*s
@@ -876,74 +809,115 @@ def get_u_iso(cif, data):
     b_iso = [convert_u_to_b(change_NA_value(strip_brackets(i))) for i in cif[data]["_atom_site_U_iso_or_equiv"]]
 
     num = count_nones(b_iso)
-
     if num > 0:
         print(f"{num} missing Uiso values.")
 
     return b_iso
 
 
-def convert_aniso_to_iso(cif,data):
+def get_beq(cif, data):
     """
-    Returns a list of strings giving the equivalent isotropic atomic displacement parameters,
-    B, of all atomic sites.
-
-    The anisotropic and isotropic U and B values are obtained, where possible, and their
-    relevant site labels are compared ("_atom_site_aniso_label" vs "_atom_site_label"). If a
-    site is present in both lists, it takes the equivalent anisotropic value. If it is present
-    only in "_atom_site_label", it takes the isotropic value. If no B values are given, it
-    takes tha value "1"
-
-    Used by get_beq().
+    Looks the Biso, Uiso, Baniso, Uaniso (in that order) to get beq values. If they are missing,
+    then a default value of "1." is used.
 
     Args:
         cif: a PyCifRW dictionary
         data: the key value for a data block in the CIF
     Returns:
         A list containing the isotropic atomic displacement parameters, B, of all atomic sites.
-    Raises:
-        KeyError: if the key "_atom_site_aniso_label" is not present.
+
     """
-    labels_aniso = get_dict_entry_copy_throw_error(cif[data],"_atom_site_aniso_label") #get a copy of the labels!!!
-    labels       = get_dict_entry_copy_throw_error(cif[data],"_atom_site_label") # I alwys believe the labels. they are cannonical
+    #these will act as keys later on
+    labels = get_dict_entry_copy(cif[data],"_atom_site_label") # I want everything to be in the same order as the site_label
 
-    #if we get to here, then there should be some sort of anisotropic values
-    try:
-        b_equiv = get_b_aniso(cif,data) #if it isn't Baniso,
-        print(f"{len(b_equiv)} Biso values calculated from anisotropic B values.")
-    except KeyError:
-        b_equiv = get_u_aniso(cif,data) #then it should be Uaniso
-        print(f"{len(b_equiv)} Biso values calculated from anisotropic U values.")
+    # get all potential ADPs from the str as dictionaries. The key is the atom label, the value is the ADP value
+    b_iso   = make_b_dict(cif,data,"b_iso")
+    u_iso   = make_b_dict(cif,data,"u_iso")
+    b_aniso = make_b_dict(cif,data,"b_aniso")
+    u_aniso = make_b_dict(cif,data,"u_aniso")
 
-    #do comparison with atom_labels to make sure
-    # every atom has a Bequiv
-    if labels_aniso == labels: #everything is there and in the same order
-        return b_equiv
-
-    #if we get to here, labelsAniso != labels, and we need to figure
-    #  out which atoms are missing, and if they have B or Uiso value
-    try:
-        b_iso = get_b_iso(cif, data)
-    except KeyError:
+    # check all the dictionaries in my order of preference to get the ADP value.
+    r=[]
+    for key in labels:
         try:
-            b_iso = get_u_iso(cif, data)
+            b = b_iso[key]
         except KeyError:
-            b_iso = [None] * len(labels)
+            try:
+                b = u_iso[key]
+            except KeyError:
+                try:
+                    b = b_aniso[key]
+                    print(f"beq value for site {key} calculated from anisotropic B values.")
+                except KeyError:
+                    try:
+                        b = u_aniso[key]
+                        print(f"beq value for site {key} calculated from anisotropic U values.")
+                    except KeyError:
+                        b = None
 
-    #I now have the b_iso values from the atom_label list
-    #need to build a list of b_iso values to return
-    r = [None] * len(labels)
-    for i in range(len(labels)): # iterate over all of the atom labels
-        atom_label = labels[i]
-        try:
-            aniso_index = labels_aniso.index(atom_label) #if the atom label matches aniso label,
-            r[i] = b_equiv[aniso_index] #  then copy that value into the returning list
-            #print("Biso value calculated from anisotropic values.")
-        except ValueError:
-            r[i] = b_iso[i] #if the label doesn't match, then copy the result from the Biso list
-            #print("Biso value taken from given isotropic values.")
+        if b is None or float(b) == 0.0: # missing or zero value
+            print(f"Warning! beq value missing or zero for site {key}! Default value of 1 entered")
+            b = "1."
+        elif b.startswith("-"):
+            print(f"Warning! Negative atomic displacement parameter detected for site {key}! Please check.")
+        r.append(b) #the ADP values are now in the same order as the site label
 
     return r
+
+
+def make_b_dict(cif,data,b_type):
+    """
+    A helper function for get_beq() to get the site labels and associated ADP values, and
+    return a dictionary with labels as keys and values as ADP values. If the value is None,
+    then that key is removed
+
+    Parameters
+    ----------
+    cif : PyCifRW dictionary
+    
+    data : the data block you're looking at
+    
+    b_type: "b_iso", "u_iso", "b_aniso", or "u_aniso"
+
+    Returns
+    -------
+    Dictionary containing site labels as keys and ADPs as values.
+    If a value is None, it is removed from the dictionary. 
+    It is possible to return an empty dictionary.
+    If the b_type selected is not in the cif, an empty dictionary is returned
+    
+    Raises
+    ------
+    ValueError if b_type is not one of "b_iso", "u_iso", "b_aniso", or "u_aniso".
+
+    """
+    iso = True
+    if b_type == "b_iso":
+        f = get_b_iso
+    elif b_type == "u_iso":
+        f = get_u_iso
+    elif b_type == "b_aniso":
+        f = get_b_aniso
+        iso = False
+    elif b_type == "u_aniso":
+        f = get_u_aniso
+        iso = False
+    else:
+        raise ValueError(f'Invalid choice. Got "{b_type}", expecting "b_iso", "u_iso", "b_aniso", or "u_aniso".')
+    
+    try:
+        b_list = f(cif,data)
+        if iso:
+            b_labels = get_dict_entry_copy(cif[data],"_atom_site_label")
+        else:
+            b_labels = get_dict_entry_copy(cif[data],"_atom_site_aniso_label")
+    except KeyError:
+        return {}
+    d = dict(zip(b_labels, b_list))
+
+    #filter out any None values
+    d = {k: v for k, v in d.items() if v is not None}
+    return d
 
 
 def get_b_aniso(cif,data):
@@ -966,8 +940,7 @@ def get_b_aniso(cif,data):
     B22 = [float(strip_brackets(i)) for i in cif[data]["_atom_site_aniso_B_22"]]
     B33 = [float(strip_brackets(i)) for i in cif[data]["_atom_site_aniso_B_33"]]
 
-    b_equiv = [(B11[i] + B22[i] + B33[i])/3.0 for i in range(len(B11))] #get the average of the three values
-
+    b_equiv = [(b11 + b22 + b33)/3.0 for b11, b22, b33 in zip(B11, B22, B33)] #get the average of the three values
     b_equiv = [str(round(float(i), 3)) for i in b_equiv] # round to 3 d.p.
 
     return b_equiv
@@ -995,6 +968,6 @@ def get_u_aniso(cif,data):
     U33 = [float(strip_brackets(i)) for i in cif[data]["_atom_site_aniso_U_33"]]
 
     #get the average of the three values
-    b_equiv = [convert_u_to_b(str((U11[i] + U22[i] + U33[i])/3.0)) for i in range(len(U11))]
+    b_equiv = [convert_u_to_b(str((u11 + u22 + u33)/3.0)) for u11, u22, u33 in zip(U11,U22,U33)]
 
     return b_equiv
