@@ -53,7 +53,7 @@ As a part of these plugins, there is the ability to insert CIF files in STR form
 
 0. Install python (or use `ciftostr.exe`)
 1. Copy `ciftostr.pyz` to the TOPAS directory (e.g. C:\TOPAS6).
-2. Replace your copy of `TAInsertCIF.bsh` with [this one](TAInsertCIF.bsh). (Your file is probably found in C:\Users\?????\AppData\Roaming\jEdit\macros)
+2. Replace your copy of `TAInsertCIF.bsh` with [this one](TAInsertCIF.bsh). (Your file is probably found in C:\Users\\?????\AppData\Roaming\jEdit\macros)
 3. If you are using the Windows executable file, then you will need to change part of line 22 in the [BSH file](TAInsertCIF.bsh) from "`python ciftostr.pyz`" to "`ciftostr`"
 
 Now, when you choose "`Insert CIFs in INP format`" from the plugin in jEdit, `ciftostr` will be used in the background to generate that format.
