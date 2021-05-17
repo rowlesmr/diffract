@@ -73,17 +73,9 @@ copy %filename%.pyz %dest%
 
 
 REM Copy the relevant files to the GitHub repository
-del %git%%filename%.py
-copy %filename%.py %git%
 
-del %git%__main__.py
-copy __main__.py %git%
-
-del %git%ciftostrmain.py
-copy ciftostrmain.py %git%
-
-del %git%citationdate.py
-copy citationdate.py %git%
+del %git%*.py
+copy *.py %git%
 
 del %git%executables\%filename%.pyz
 copy %filename%.pyz %git%executables\
