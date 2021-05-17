@@ -45,6 +45,17 @@ will show some detailed information on what ciftostr is doing to the CIF data to
 `python ciftostr.pyz --licence`<br />
 will show some licence information
 
+## jEdit integration
+
+[John Evans](http://topas.dur.ac.uk) has made available [a number of plugins](http://topas.dur.ac.uk/topaswiki/doku.php?id=jedit) for the text editor [jEdit](http://www.jedit.org/) that make it integrate very well with TOPAS when operating in launch mode.
+
+As a part of these plugins, there is the ability to insert CIF files in STR format. If you wish to use `ciftostr` to generate the STR information, then you need to make the following changes:
+0. Install python (or use `ciftostr.exe`)
+1. Copy `ciftostr.pyz` to the TOPAS directory (e.g. C:\TOPAS6).
+2. Replace your copy of `TAInsertCIF.bsh` with [this one](TAInsertCIF.bsh). (Your file is probably found in C:\Users\?????\AppData\Roaming\jEdit\macros)
+3. If you are using the Windows executable file, then you will need to change part of line 22 in the [BSH file](TAInsertCIF.bsh) from "`python ciftostr.pyz`" to "`ciftostr`"
+
+Now, when you choose "`Insert CIFs in INP format`" from the plugin in jEdit, `ciftostr` will be used in the background to generate that format.
 
 ## Dependencies
 
