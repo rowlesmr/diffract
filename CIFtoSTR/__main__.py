@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat May 15 22:50:16 2021
+SPDX-License-Identifier:  GNU Lesser General Public License v3.0 or later
 
-@author: 184277J
+Copyright © 2021 Matthew Rowles
+
 """
 
 
