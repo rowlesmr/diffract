@@ -434,7 +434,12 @@ def get_spacegroup(cif, data):
                                                 "_symmetry_Int_Tables_number",
                                                 "_space_group_IT_number",
                                                 default = "")
-
+    try:
+        _ = int(spacegroup)
+        print("Spacegroup given by number. Check that the SG setting matches that of the atom coordinates.")
+    except ValueError:
+        pass #if it gets here, it wasn't a SG number...
+    
     return spacegroup
 
 
@@ -631,7 +636,14 @@ def convert_site_label_to_atom(s):
                 "Sb","Sc","Sm","Se","Si","Sn","Sr","Ta","Tb","Tc",\
                 "Te","Th","Tl","Ti","Tm", "W", "U", "V","Xe", "Y",\
                 "Yb","Zn","Zr","Np","Pu","Am","Cm","Bk","Cf", "D")
-
+        
+    WATER = ("Wat","WAT", "wat")
+        
+    r = s[0:3] # take the first three characters, maybe you mean water?
+    if r in WATER:
+        print("Site label might mean 'water'. Please check that this atom really is oxygen.")
+        return "O"
+    
     r = s[0:2] #take the first two characters
     if r in ELEMENTS:
         return r

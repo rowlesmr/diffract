@@ -82,11 +82,13 @@ The atomic sites are constructed as follows: The atom labels are taken from '_at
 with the fractional x, y, and z coordinates given by '_atom_site_fract_x', '_y', and '_z'. 
 If the decimal values of the fractional coordinates are consistent with the fractions 1/6, 1/3, 2/3,
 or 5/6, then the decimal value is replaced by the fractions.
+
 The site occupancy is given by '_atom_site_occupancy', or by '1', if that key is not given.
 The atom type is given by '_atom_site_type_symbol', where available, or by the first one or two
 characters of the site label. If these characters match an element symbol, then that is used, 
 otherwise, the label is used in it's entirety, and the user must decide the correct atom type to use.
-An attempt is also made to reorder the charge given on an atom, to ensure it is compatible with
+If the site label starts with 'Wat', then it is assumed that this means 'water', and an oxygen atom
+is used. An attempt is also made to reorder the charge given on an atom, to ensure it is compatible with
 TOPAS ordering, eg Fe+2, not Fe2+.
 
 Isotropic Atomic Displacement Parameters (ADPs; Biso), are taken from '_atom_site_B_iso_or_equiv', or

@@ -109,7 +109,8 @@ class Testciftostr(unittest.TestCase):
         self.assertEqual(cf.convert_site_label_to_atom("Pz"), "P")
         self.assertEqual(cf.convert_site_label_to_atom("As1"), "As")
         self.assertEqual(cf.convert_site_label_to_atom("OW1"), "O")
-        self.assertEqual(cf.convert_site_label_to_atom("ss123"), "ss123")
+        self.assertEqual(cf.convert_site_label_to_atom("ss123"), "ss123")     
+        self.assertEqual(cf.convert_site_label_to_atom("WatX6A"), "O")
 
     def test_fix_atom_type(self):
         self.assertEqual(cf.fix_atom_type("Cu"),   "Cu")
