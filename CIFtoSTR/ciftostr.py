@@ -60,7 +60,14 @@ def write_str(cif_file, str_file = None, data = "all"):
     update_output_filename = True # by default, I want to update the output filename
 
     for d in data_keys:
-        s = create_str(cif, d)
+        # check if there are unit cell prms in the data. If not, it probably isn't a structure
+        #  and we can skip it, and try the next data, if any.
+        try:
+            cif[d]["_cell_length_a"] #trying to get a unit cell prm
+            pass
+        except KeyError: #if it isn't there, we skip to the next data block
+            print(f"No structure detected in datablock {d}. Trying the next block...")
+            continue
 
         if get_new_output_filename and update_output_filename:
             str_file = clean_filename(get_phasename(cif, d)) + ".str"
@@ -76,6 +83,8 @@ def write_str(cif_file, str_file = None, data = "all"):
             file_to_write = open(f, "a")
         else:
             file_to_write = open(f, "w")
+            
+        s = create_str(cif, d)
 
         print(f"Now writing {file_to_write.name}.")
         file_to_write.write(s)
@@ -176,29 +185,31 @@ def val_to_frac(s):
     TWO_THIRD_FRAC = "=2/3;"
     FIVE_SIXTH_FRAC= "=5/6;"
 
+    r = None
+
     if s is None:
-        return None
+        return r
 
     fraction_detected = False
     if s in ONE_SIXTH:
         fraction_detected = True
-        s = ONE_SIXTH_FRAC
+        r = ONE_SIXTH_FRAC
     elif s in ONE_THIRD:
         fraction_detected = True
-        s = ONE_THIRD_FRAC
+        r = ONE_THIRD_FRAC
     elif s in TWO_THIRD:
         fraction_detected = True
-        s = TWO_THIRD_FRAC
+        r = TWO_THIRD_FRAC
     elif s in FIVE_SIXTH:
         fraction_detected = True
-        s = FIVE_SIXTH_FRAC
+        r = FIVE_SIXTH_FRAC
     else:
-        pass #s is all good
+        r = s #s is all good
 
     if fraction_detected:
-        print("Fractional atomic coordinate detected and replaced.")
+        print(f"Fractional atomic coordinate '{s}' detected and replaced with '{r}'.")
 
-    return s
+    return r
 
 
 def get_dict_entry_copy(dct, *keys, default=None):
@@ -641,7 +652,7 @@ def convert_site_label_to_atom(s):
         
     r = s[0:3] # take the first three characters, maybe you mean water?
     if r in WATER:
-        print("Site label might mean 'water'. Please check that this atom really is oxygen.")
+        print(f"Site label '{s}' probably means 'water'. Please check that this atom really is oxygen.")
         return "O"
     
     r = s[0:2] #take the first two characters
@@ -651,9 +662,10 @@ def convert_site_label_to_atom(s):
     r = s[0:1] #take the first character
     if r in ELEMENTS:
         if r == "W":
-            print("W detected. Do you mean tungsten or oxygen from a water molecule? Please check.")
+            print(f"W detected for site '{s}'. Do you mean tungsten or oxygen from a water molecule? Please check.")
         return r
 
+    print(f"Can't decide what atom the site label '{s}' should be. Please check it.")
     return s #if everything fails, just return what the label was
 
 

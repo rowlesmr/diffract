@@ -1147,8 +1147,7 @@ def main():
         f.write("")
         f.close()
                
-        convert_cifs_to_strs(filenames, str_file = strname, data = "append")
-        
+        convert_cifs_to_strs(filenames, str_file = strname, data = "append")       
     else:
         filenames = []
         for i in range(1,len(sys.argv)):
@@ -1177,6 +1176,5 @@ def convert_cifs_to_strs(filenames, str_file = None, data = "all"):
 
 if __name__ == "__main__":
     main()
-
 
 print("Thanks for using CIFtoSTR. If you liked this, please cite " + CITATION)
