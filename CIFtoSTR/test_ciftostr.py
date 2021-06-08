@@ -9,9 +9,12 @@ Created on Sat May 15 23:10:34 2021
 
 import unittest
 import ciftostr as cf
+import contextlib
+import io
 
 class Testciftostr(unittest.TestCase):
-
+    
+    
     def test_strip_brackets(self):
         self.assertEqual(cf.strip_brackets("0.234(6)"), "0.234")
         self.assertEqual(cf.strip_brackets("0.234(6)78"), "0.234")
@@ -33,6 +36,11 @@ class Testciftostr(unittest.TestCase):
         self.assertEqual(cf.val_to_frac("0.83333"), "=5/6;")
         self.assertEqual(cf.val_to_frac("0.12345"), "0.12345")
         self.assertIsNone(cf.val_to_frac(None))
+        
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            cf.val_to_frac("0.16667")
+            self.assertEqual(f.getvalue(), "Fractional atomic coordinate '0.16667' detected and replaced with '=1/6;'.\n")
 
     def test_get_dict_entry_copy(self):
         cif = { "data" : {"_chemical_name_mineral": "name1",
@@ -112,6 +120,22 @@ class Testciftostr(unittest.TestCase):
         self.assertEqual(cf.convert_site_label_to_atom("ss123"), "ss123")     
         self.assertEqual(cf.convert_site_label_to_atom("WatX6A"), "O")
 
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            cf.convert_site_label_to_atom("WatX6A")
+            self.assertEqual(f.getvalue(), "Site label 'WatX6A' probably means 'water'. Please check that this atom really is oxygen.\n")
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            cf.convert_site_label_to_atom("WO1")
+            self.assertEqual(f.getvalue(), "W detected for site 'WO1'. Do you mean tungsten or oxygen from a water molecule? Please check.\n")
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            cf.convert_site_label_to_atom("foobar")
+            self.assertEqual(f.getvalue(), "Can't decide what atom the site label 'foobar' should be. Please check it.\n")
+
+
+
+
     def test_fix_atom_type(self):
         self.assertEqual(cf.fix_atom_type("Cu"),   "Cu")
         self.assertEqual(cf.fix_atom_type("I"),    "I")
@@ -129,6 +153,18 @@ class Testciftostr(unittest.TestCase):
         self.assertEqual(cf.convert_atom_type_to_topas("H-1"),  "H-1")
         self.assertEqual(cf.convert_atom_type_to_topas("Si+0"), "Si")
         self.assertEqual(cf.convert_atom_type_to_topas("Cu+8"), "Cu")
+
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            cf.convert_atom_type_to_topas("Cu+8")
+            self.assertEqual(f.getvalue(), "Cu+8 is not a legal TOPAS scattering factor. Atom replaced with Cu.\n")
+
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            cf.convert_atom_type_to_topas("Cu+8", "Cu2")
+            self.assertEqual(f.getvalue(), "Cu+8 is not a legal TOPAS scattering factor. Atom in site Cu2 replaced with Cu.\n")
+
+
 
     def test_convert_u_to_b(self):
         self.assertIsNone(cf.convert_u_to_b(None))
@@ -185,9 +221,17 @@ class Testciftostr(unittest.TestCase):
         cif = { "data" : {"_symmetry_Int_Tables_number" : "3",
                           "_space_group_IT_number" : "4"}}
         self.assertEqual(cf.get_spacegroup(cif, "data"), "3")
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            cf.get_spacegroup(cif, "data")
+            self.assertEqual(f.getvalue(), "Spacegroup given by number. Check that the SG setting matches that of the atom coordinates.\n")
 
         cif = { "data" : {"_space_group_IT_number" : "4"}}
         self.assertEqual(cf.get_spacegroup(cif, "data"), "4")
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            cf.get_spacegroup(cif, "data")
+            self.assertEqual(f.getvalue(), "Spacegroup given by number. Check that the SG setting matches that of the atom coordinates.\n")
 
         cif = { "data" : {"_something_different" : "4"}}
         self.assertEqual(cf.get_spacegroup(cif, "data"), "")
@@ -312,6 +356,16 @@ class Testciftostr(unittest.TestCase):
                           "\t\tsite O-H1 num_posns 0\tx 0.123   y  =2/3;    z  0      occ O  0.75 beq 1.  \n"+\
                           "\t\tsite Na1  num_posns 0\tx 0.34567 y -0.343444 z -0.0033 occ Na 1.   beq 0.23\n")
 
+        cif = { "data" : {"_atom_site_label" : ["O-H1"],
+                          "_atom_site_fract_x" : ["0.123(4)"],
+                          "_atom_site_fract_y" : ["0.4567"],
+                          "_atom_site_fract_z" : ["0"],
+                          "_atom_site_B_iso_or_equiv" : ["0.23"],
+                          "_atom_site_occupancy" : ["0.75"]}}
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            cf.get_atom_sites_string(cif, "data")
+            self.assertEqual(f.getvalue(), "Warning! Atom types inferred from site labels. Please check for correctness.\n")
 
     def test_get_beq(self):
         cif = { "data" : {"_atom_site_label" : ["O-H1", "Na1", "H"],
@@ -322,12 +376,31 @@ class Testciftostr(unittest.TestCase):
                           "_atom_site_U_iso_or_equiv" : [".", "0.23", "0"]}}
         self.assertEqual(cf.get_beq(cif, "data"), ['1.', '18.16', '1.'])
 
+        cif = { "data" : {"_atom_site_label" : ["O-H1", "Na1", "H"],
+                          "_atom_site_U_iso_or_equiv" : ["0.2", "0.23", "0"]}}
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            cf.get_beq(cif, "data")
+            self.assertEqual(f.getvalue(), "Warning! beq value missing or zero for site H! Default value of 1 entered\n")      
+
+        cif = { "data" : {"_atom_site_label" : ["O-H1", "Na1", "H"],
+                          "_atom_site_U_iso_or_equiv" : ["0.2", "0.23", "-0.2"]}}
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            cf.get_beq(cif, "data")
+            self.assertEqual(f.getvalue(), "Warning! Negative atomic displacement parameter detected for site H! Please check.\n")      
+
         cif = { "data" : {"_atom_site_label" : ["O-H1", "Na1"],
                           "_atom_site_aniso_label" : ["O-H1", "Na1"],
                           "_atom_site_aniso_B_11" : ["1.2", "2.3(3)"],
                           "_atom_site_aniso_B_22" : ["1.4", "2.5"],
                           "_atom_site_aniso_B_33" : ["1.5", "2.6"]}}
         self.assertEqual(cf.get_beq(cif, "data"), ['1.367', '2.467'])
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            cf.get_beq(cif, "data")
+            self.assertEqual(f.getvalue(), "beq value for site O-H1 calculated from anisotropic B values.\n"+\
+                                           "beq value for site Na1 calculated from anisotropic B values.\n")      
 
         cif = { "data" : {"_atom_site_label" : ["O-H1", "Na1"],
                           "_atom_site_aniso_label" : ["O-H1", "Na1"],
@@ -338,6 +411,20 @@ class Testciftostr(unittest.TestCase):
                           "_atom_site_aniso_U_22" : ["1.4", "2.5"],
                           "_atom_site_aniso_U_33" : ["1.5", "2.6"]}}
         self.assertEqual(cf.get_beq(cif, "data"), ['1.367', '2.467'])
+
+        cif = { "data" : {"_atom_site_label" : ["O-H1", "Na1"],
+                          "_atom_site_aniso_label" : ["O-H1", "Na1"],
+                          "_atom_site_aniso_U_11" : ["1.2", "2.3(3)"],
+                          "_atom_site_aniso_U_22" : ["1.4", "2.5"],
+                          "_atom_site_aniso_U_33" : ["1.5", "2.6"]}}
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            cf.get_beq(cif, "data")
+            self.assertEqual(f.getvalue(), "beq value for site O-H1 calculated from anisotropic U values.\n"+\
+                                           "beq value for site Na1 calculated from anisotropic U values.\n")      
+
+
+
 
         cif = { "data" : {"_atom_site_label" : ["O-H1", "Na1"],
                           "_atom_site_B_iso_or_equiv" : ["0.23", "."],
@@ -393,19 +480,29 @@ class Testciftostr(unittest.TestCase):
 
 
     def test_get_b_iso(self):
-        cif = { "data" : {"_atom_site_B_iso_or_equiv" : [".", "0.23", "0.53(3)", "?"]}}
-        self.assertEqual(cf.get_b_iso(cif, "data"), [None, "0.23", "0.53", None])
-
         cif = { "data" : {"_something_different" : [".", "0.23", "0.53(3)", "?"]}}
         self.assertRaises(KeyError, cf.get_b_iso, cif, "data")
 
+        cif = { "data" : {"_atom_site_B_iso_or_equiv" : [".", "0.23", "0.53(3)", "?"]}}
+        self.assertEqual(cf.get_b_iso(cif, "data"), [None, "0.23", "0.53", None])
+
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            cf.get_b_iso(cif, "data")
+            self.assertEqual(f.getvalue(), "2 missing Biso values.\n")      
+
 
     def test_get_u_iso(self):
+        cif = { "data" : {"_something_different" : [".", "0.0023", "0.053(3)", "?"]}}
+        self.assertRaises(KeyError, cf.get_u_iso, cif, "data")
+
         cif = { "data" : {"_atom_site_U_iso_or_equiv" : [".", "0.0023", "0.053(3)", "?"]}}
         self.assertEqual(cf.get_u_iso(cif, "data"), [None, '0.182', '4.185', None])
 
-        cif = { "data" : {"_something_different" : [".", "0.0023", "0.053(3)", "?"]}}
-        self.assertRaises(KeyError, cf.get_u_iso, cif, "data")
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            cf.get_u_iso(cif, "data")
+            self.assertEqual(f.getvalue(), "2 missing Uiso values.\n")
 
 
     def test_get_b_aniso(self):
