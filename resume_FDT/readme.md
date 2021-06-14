@@ -19,6 +19,11 @@ If you would like to run it in the command line, you need to provide some comman
 `python resume_FDT.py *.fdt`<br />
 will run through all of the FDT files in that directory.
 
+`python resume_FDT.py data.fdt`<br />
+will do just that one FDT file
+
+The metadata is saved in a text file with the same name as the source file, with `.resume` added to the end. e.g. `data.fdt.resume`.
+
 
 ## Dependencies
 
