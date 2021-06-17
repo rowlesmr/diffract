@@ -28,7 +28,10 @@ def hex_to_char(hexstr):
     return hex_to_str(hexstr)
 
 def hex_to_str(hexstr):
-    return bytes.fromhex(hexstr).decode("ASCII")
+    try:
+        return bytes.fromhex(hexstr).decode("ASCII")
+    except UnicodeDecodeError:
+        return "_?_"
 
 def hex_to_int(hexstr):
     return int(change_endian(hexstr), 16)
@@ -100,7 +103,7 @@ HELP = "To output the resumes of FDT files.\n>python resume_FDT.py *.fdt\nMatthe
 
 def main():
     if len(sys.argv) <= 1: #Assume the user needs some guidance
-        print(HELP) #just in case there are commandline people wanting to know.
+        print(HELP)
         sys.exit()
 
     inFilenames = []
