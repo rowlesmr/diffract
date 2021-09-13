@@ -343,7 +343,8 @@ def count_nones(l):
 def clean_phasename(s):
     """
     Removes new lines, carriage returns, and leading/trailing whitespace from a
-    string representing a phase name
+    string representing a phase name.
+	Also removes single quote characters "'", as they are comment characters in TOPAS
 
     Args:
         s: a string
@@ -351,7 +352,7 @@ def clean_phasename(s):
     Returns:
         A string with no newlines, carriage returns, or leading/trailing whitespace
      """
-    return s.strip().replace('\n', '').replace('\r', '')
+    return s.strip().replace('\n', '').replace('\r', '').replace("'", "_")
 
 
 def clean_filename(s):
